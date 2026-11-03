@@ -1,0 +1,44 @@
+--- a/ui/GameSettingsPanelContainer.gd
++++ b/ui/GameSettingsPanelContainer.gd
+@@ -93,7 +93,6 @@
+ 		if node is OptionButton:
+ 			node.connect("item_selected", self, "_setting_value_changed", [setting])
+ 		pass
+-	SteamLobby.connect("received_match_settings", self, "_on_received_match_settings")
+ 	init = false
+ 	update_menu()
+ 	if load_all_formats() == []:
+@@ -155,18 +154,8 @@
+ 	update_menu()
+ 
+ func _setting_value_changed(_value, _setting):
+-	if init:
+-		update_lobby_data()
+ 	update_menu()
+ 
+-func _on_received_match_settings(settings, force = false):
+-	if SteamLobby.LOBBY_OWNER == SteamHustle.STEAM_ID:
+-		if not force:
+-			return
+-		if not init:
+-			update_lobby_data()
+-	load_settings(settings)
+-
+ func load_settings(settings):
+ 	
+ 	
+@@ -219,14 +208,6 @@
+ 	$"%AsymmetricalContainer".visible = $"%AsymmetricalHealthMeter".pressed
+ 	pass
+ 
+-func update_lobby_data():
+-
+-
+-	if SteamHustle.STEAM_ID != Steam.getLobbyOwner(SteamLobby.LOBBY_ID):
+-		return
+-	print("updating lobby settings")
+-	SteamLobby.update_match_settings(get_data())
+-	
+ func get_data():
+ 	var settings: = {}
+ 	for setting in settings_nodes:

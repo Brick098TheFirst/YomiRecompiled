@@ -1,0 +1,283 @@
+--- a/Global.gd
++++ b/Global.gd
+@@ -2,7 +2,7 @@
+ 
+ signal nag_window()
+ 
+-var VERSION = "1.10.0-steam"
++var VERSION = "1.0.0-recompiled"
+ const RESOLUTION = Vector2(640, 360)
+ 
+ const STYLE_SAVE_FEATURE_ENABLED = true
+@@ -60,7 +60,6 @@
+ var enable_timer_sound = true
+ var steam_demo_version = false
+ var show_last_move_indicators = true
+-var show_community_events = true
+ var speed_lines_enabled = true
+ var replay_extra_freeze_frames = true
+ var enable_replay_backups = true
+@@ -132,10 +131,15 @@
+ 
+ }
+ 
++# Music is loaded from the loose file at runtime (see load_music) rather than through
++# preload/load, so this build never depends on the .import cache being shipped or
++# rebuilt. An offline build has nobody to re-run the editor import for it.
+ var songs = {
+-	"bg1": preload("res://sound/music/bg1.mp3")
++	"bg1": "res://sound/music/bg1.ogg"
+ }
+ 
++var music_streams = {}
++
+ var character_select_node = null
+ 
+ var characters_cache = {}
+@@ -144,7 +148,7 @@
+ 	return characters_cache[name]
+ 
+ func full_version():
+-	return ( not steam_demo_version) and SteamHustle.STARTED
++	return ( not steam_demo_version) and OfflineCapabilities.STARTED
+ 
+ func world_to_screen(x, y) -> Vector2:
+ 	if not is_instance_valid(current_game):
+@@ -175,6 +179,7 @@
+ 	return winws_detected
+ 
+ func _enter_tree():
++	migrate_old_user_data()
+ 	if _is_winws_active():
+ 		winws_active_message()
+ 		winws_detected = true
+@@ -190,7 +195,7 @@
+ 
+ 	steam_demo_version = "steam" in VERSION and "beta" in VERSION
+ 	audio_player = AudioStreamPlayer.new()
+-	call_deferred("add_child", audio_player)
++	call_deferred("add_audio_player")
+ 	audio_player.bus = "Music"
+ 	
+ 	var data = get_player_data()
+@@ -203,6 +208,7 @@
+ 
+ 	randomize()
+ 	rng.randomize()
++	apply_saved_audio_levels()
+ 	set_music_enabled(music_enabled)
+ 	set_fullscreen(fullscreen)
+ 	set_cap_framerate(cap_framerate)
+@@ -236,7 +242,7 @@
+ 	yield(get_tree(), "idle_frame")
+ 	yield(get_tree(), "idle_frame")
+ 	yield(get_tree(), "idle_frame")
+-	if randi() % 50 == 0 and not SteamHustle.STARTED:
++	if randi() % 50 == 0 and not OfflineCapabilities.STARTED:
+ 		emit_signal("nag_window")
+ 
+ func winws_active_message():
+@@ -261,16 +267,76 @@
+ 		print("Number of winws processes: " + str(result))
+ 	return winws_active
+ 
++# Bus indices are resolved by name so a custom bus layout cannot silently mute us.
++const AUDIO_BUSES = {"master": "Master", "fx": "Fx", "ui": "UI", "music": "Music"}
++
++func bus_db(value) -> float:
++	# linear 0..1 -> dB, clamped; a muted slider must not become -inf and poison the bus
++	var v = clamp(float(value), 0.0, 1.0)
++	return linear2db(v) if v > 0.0 else -80.0
++
++func apply_saved_audio_levels():
++	# Previously these were only applied when the Options panel was built, so a saved
++	# music volume of 0 left the Music bus silent for the whole session.
++	AudioServer.set_bus_volume_db(AudioServer.get_bus_index(AUDIO_BUSES.master), bus_db(master_value))
++	AudioServer.set_bus_volume_db(AudioServer.get_bus_index(AUDIO_BUSES.fx), bus_db(fx_value))
++	AudioServer.set_bus_volume_db(AudioServer.get_bus_index(AUDIO_BUSES.ui), bus_db(ui_value))
++	AudioServer.set_bus_volume_db(AudioServer.get_bus_index(AUDIO_BUSES.music), bus_db(music_value))
++	AudioServer.set_bus_mute(AudioServer.get_bus_index(AUDIO_BUSES.music), not music_enabled)
++
++func ensure_music_playing():
++	# Restarts the track if it stopped for a reason other than the user muting music.
++	# Godot 3 quirk: AudioStreamPlayer.play() silently does nothing after stop() while a
++	# stream is already assigned - the stream has to be (re)assigned first, which is why
++	# this goes through play_random_song() instead of calling play() directly.
++	if not music_enabled:
++		return
++	if audio_player == null or not audio_player.is_inside_tree():
++		return
++	if not audio_player.playing:
++		play_random_song()
++
+ func set_music_enabled(on):
+ 	music_enabled = on
++	AudioServer.set_bus_mute(AudioServer.get_bus_index(AUDIO_BUSES.music), not on)
+ 	if on:
+ 		play_random_song()
+-	else:
++	elif audio_player != null:
+ 		audio_player.stop()
+ 
++# The player is added deferred from _ready so it survives a scene change. Both the
++# deferred call and play_song() go through here, so the node can never be added twice
++# (Godot logs "already has a parent" and the music never starts).
++func add_audio_player():
++	if audio_player != null and audio_player.get_parent() == null:
++		add_child(audio_player)
++
+ func play_random_song():
+ 	play_song(rng.choose(songs.keys()))
+ 
++# Reads the music file straight off disk. Ogg Vorbis is parsed by the engine, so no
++# editor import step is required; mp3/wav fall back to the resource loader.
++func load_music(song_name):
++	if music_streams.has(song_name):
++		return music_streams[song_name]
++	var path = songs[song_name]
++	if path.get_extension().to_lower() != "ogg":
++		var resource = load(path)
++		if resource is AudioStream:
++			music_streams[song_name] = resource
++			return resource
++		return null
++	var file = File.new()
++	if file.open(path, File.READ) != OK:
++		push_warning("music: cannot open %s" % path)
++		return null
++	var bytes = file.get_buffer(file.get_len())
++	file.close()
++	var stream = AudioStreamOGGVorbis.new()
++	stream.data = bytes
++	music_streams[song_name] = stream
++	return stream
++
+ func has_supporter_pack():
+ 	return true
+ 
+@@ -303,8 +369,22 @@
+ 	save_options()
+ 
+ func play_song(song_name):
+-	audio_player.stream = songs[song_name]
++	if audio_player == null:
++		push_warning("music: audio player is null, cannot play %s" % song_name)
++		return
++	var stream = load_music(song_name)
++	if stream == null:
++		push_warning("music: stream %s failed to load from %s" % [song_name, songs[song_name]])
++		return
++	add_audio_player()
++	audio_player.stream = stream
+ 	audio_player.play()
++	if not audio_player.playing:
++		push_warning("music: play() did not start for %s" % song_name)
++
++func play_song_if_idle():
++	if music_enabled and audio_player != null and audio_player.is_inside_tree() and not audio_player.playing:
++		play_random_song()
+ 
+ func add_dir_contents(dir: Directory, files: Array, directories: Array, recursive: bool = true, extension: String = "", full_path = true):
+ 	var file_name = dir.get_next()
+@@ -351,26 +431,6 @@
+ 
+ 
+ 
+-func publish_name_color():
+-	if SteamLobby.LOBBY_ID == 0:
+-		return
+-	var hex = get_name_color().to_html(false) if has_name_color() else ""
+-	Steam.setLobbyMemberData(SteamLobby.LOBBY_ID, "name_color", hex)
+-
+-
+-
+-
+-
+-func get_remote_name_color(steam_id):
+-	if steam_id == SteamHustle.STEAM_ID:
+-		return get_name_color() if has_name_color() else null
+-	if SteamLobby.LOBBY_ID == 0:
+-		return null
+-	var hex = Steam.getLobbyMemberData(SteamLobby.LOBBY_ID, steam_id, "name_color")
+-	if hex == "":
+-		return null
+-	return Color("#" + hex)
+-
+ func save_option(value, option):
+ 	set(option, value)
+ 	save_options()
+@@ -393,7 +453,6 @@
+ 			"xyplot_invert_snap": xyplot_invert_snap, 
+ 			"show_hitboxes": show_hitboxes, 
+ 			"show_last_move_indicators": show_last_move_indicators, 
+-			"show_community_events": show_community_events, 
+ 			"show_playback_controls": show_playback_controls, 
+ 			"playback_hotkeys_require_window": playback_hotkeys_require_window, 
+ 			"show_projectile_owners": show_projectile_owners, 
+@@ -478,12 +537,50 @@
+ 			"name_saturation": 0.5, 
+ 			"name_color_customized": false, 
+ 			"show_health_count": false, 
+-			"show_community_events": true, 
+ 			"show_next_turn_info_hud": false, 
+ 			"show_next_turn_info_on_chars": true, 
+ 		}
+ 	}
+ 
++# The data folder used to be named YourOnlyMoveIsHUSTLE-offline-recovery. Anyone who
++# played an earlier build still has replays, styles and options in there, so the first
++# run of this build copies the old folder's contents across once. Nothing is deleted.
++func migrate_old_user_data():
++	var old_dir = "user://../YourOnlyMoveIsHUSTLE-offline-recovery"
++	var marker = "user://migrated_from_old_folder.txt"
++	var file = File.new()
++	if file.file_exists(marker):
++		return
++	var src = Directory.new()
++	if src.open(old_dir) != OK:
++		return
++	var dst = Directory.new()
++	dst.make_dir_recursive("user://")
++	copy_dir_contents(old_dir, "user://")
++	file.open(marker, File.WRITE)
++	file.store_string("Copied save data from YourOnlyMoveIsHUSTLE-offline-recovery.\n")
++	file.close()
++
++func copy_dir_contents(from_dir, to_dir):
++	var dir = Directory.new()
++	if dir.open(from_dir) != OK:
++		return
++	dir.list_dir_begin(true, true)
++	var name = dir.get_next()
++	while name != "":
++		var src_path = from_dir.plus_file(name)
++		var dst_path = to_dir.plus_file(name)
++		if dir.current_is_dir():
++			var make = Directory.new()
++			make.make_dir_recursive(dst_path)
++			copy_dir_contents(src_path, dst_path)
++		else:
++			var copy = Directory.new()
++			if not File.new().file_exists(dst_path):
++				copy.copy(src_path, dst_path)
++		name = dir.get_next()
++	dir.list_dir_end()
++
+ func get_player_data():
+ 	var file = File.new()
+ 	var default_data = get_default_player_data()
+@@ -579,3 +676,14 @@
+ 		return
+ 	opened.append(version)
+ 	save_player_data({"opened_mod_sensitive_versions": opened})
++
++# ------------------------------------------------------------------ CPU / local play
++#
++# Written by the Play menu before a match, read by the CPU director when the match starts.
++# Kept here so it survives a scene change and can be shown in the menu.
++const AI_SKILL_ORDER := ["Easy", "Medium", "Hard", "Very Hard"]
++var ai_settings := {
++	"mode": "off",        # "off", "cpu" (versus the CPU) or "hotseat" (two players, one pad)
++	"skill": "Medium",
++	"ai_player": 2,
++}

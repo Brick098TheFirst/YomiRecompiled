@@ -1,0 +1,803 @@
+--- a/ui/UILayer.gd
++++ b/ui/UILayer.gd
+@@ -57,16 +57,14 @@
+ 
+ var lock_in_tick = - INF
+ 
+-const DISCORD_URL = "https://discord.gg/YourOnlyMoveIsHUSTLE"
+-const TWITTER_URL = "https://x.com/YourMoveHUSTLE"
++const DISCORD_URL = ""
++const TWITTER_URL = ""
+ const IVY_SLY_URL = "https://www.ivysly.com"
+-const TIKTOK_URL = "https://www.tiktok.com/@youronlymoveishustle"
++const TIKTOK_URL = ""
+ const STEAM_URL = "https://store.steampowered.com/app/2212330"
+-const ITCH_URL = "https://ivysly.itch.io/your-only-move-is-hustle"
++const ITCH_URL = ""
+ var MIN_TURN_TIME = 5.0
+ 
+-onready var lobby = $Lobby
+-onready var direct_connect_lobby = $DirectConnectLobby
+ onready var p1_turn_timer = $"%P1TurnTimer"
+ onready var p2_turn_timer = $"%P2TurnTimer"
+ onready var block_advantage_label = $"%BlockAdvantageLabel"
+@@ -97,7 +95,6 @@
+ 	$"%EnableStyleColorsButton": "enable_custom_colors", 
+ 	$"%EnableAurasButton": "enable_custom_particles", 
+ 	$"%EnableHitsparksButton": "enable_custom_hit_sparks", 
+-	$"%ShowCommunityEventsButton": "show_community_events", 
+ 	$"%EnableEmotes": "enable_emotes", 
+ 	$"%LastMoveIndicatorButton": "show_last_move_indicators", 
+ 	$"%ProjectileOwnersButton": "show_projectile_owners", 
+@@ -129,10 +126,6 @@
+ 		css.reset()
+ 
+ func _ready():
+-	if Global.winws_detected:
+-
+-		$"%SteamMultiplayerButton".disabled = true
+-		$"%WinwsLabel".show()
+ 	if not Global.XY_SNAP_TOGGLE_ENABLED:
+ 		
+ 		
+@@ -140,15 +133,11 @@
+ 		
+ 		$"%XYPlotInvertSnapButton".hide()
+ 	
+-	$"%SingleplayerButton".connect("pressed", self, "_on_singleplayer_pressed")
+-	$"%MultiplayerButton".connect("pressed", self, "_on_multiplayer_pressed")
+-	$"%SteamMultiplayerButton".connect("pressed", self, "_on_steam_multiplayer_pressed")
++	_build_play_menu()
++	$"%SingleplayerButton".connect("pressed", self, "_on_play_pressed")
+ 	$"%CustomizeButton".connect("pressed", self, "_on_customize_pressed")
+-	$"%DirectConnectButton".connect("pressed", self, "_on_direct_connect_button_pressed")
+-	$"%RematchButton".connect("pressed", self, "_on_rematch_button_pressed")
+ 	$"%QuitButton".connect("pressed", self, "_on_quit_button_pressed")
+ 	$"%QuitToMainMenuButton".connect("pressed", self, "_on_quit_button_pressed")
+-	$"%ForfeitButton".connect("pressed", self, "_on_forfeit_button_pressed")
+ 	$"%QuitProgramButton".connect("pressed", self, "_on_quit_program_button_pressed")
+ 	$"%ResumeButton".connect("pressed", self, "pause")
+ 	$"%ReplayButton".connect("pressed", self, "_on_view_replays_button_pressed")
+@@ -177,19 +166,9 @@
+ 		$"%OldVersionConfirmButton".connect("pressed", self, "_on_old_version_confirmed")
+ 	if has_node("%OldVersionCancelButton"):
+ 		$"%OldVersionCancelButton".connect("pressed", self, "_on_old_version_cancelled")
+-	$"%DiscordButton".connect("pressed", Steam, "activateGameOverlayToWebPage", [DISCORD_URL])
+-	$"%IvySlyLinkButton".connect("pressed", Steam, "activateGameOverlayToWebPage", [IVY_SLY_URL])
+-	$"%WishlistButton".connect("pressed", Steam, "activateGameOverlayToWebPage", [STEAM_URL])
+-	$"%TwitterButton".connect("pressed", Steam, "activateGameOverlayToWebPage", [TWITTER_URL])
+-	$"%TikTokButton".connect("pressed", Steam, "activateGameOverlayToWebPage", [TIKTOK_URL])
+-	$"%ItchButton".connect("pressed", Steam, "activateGameOverlayToWebPage", [ITCH_URL])
++	$"%IvySlyLinkButton".connect("pressed", self, "_open_external_url", [IVY_SLY_URL])
++	$"%WishlistButton".connect("pressed", self, "_open_external_url", [STEAM_URL])
+ 	$"%ResetZoomButton".connect("pressed", self, "_on_reset_zoom_pressed")
+-	Network.connect("player_turns_synced", self, "on_player_actionable")
+-	Network.connect("player_turn_ready", self, "_on_player_turn_ready")
+-	Network.connect("turn_ready", self, "_on_turn_ready")
+-	Network.connect("sync_timer_request", self, "_on_sync_timer_request")
+-	Network.connect("check_players_ready", self, "check_players_ready")
+-	Network.connect("force_open_action_buttons", self, "on_player_actionable")
+ 	
+ 	if should_open_mod_warning_window():
+ 		
+@@ -199,17 +178,15 @@
+ 		Global.mods_disabled_by_version_transition = false
+ 		$"%ModWarningWindow".start()
+ 
+-	SteamLobby.connect("join_lobby_success", self, "_on_join_lobby_success")
+ 	$"%OptionsContainer".hide()
+ 	update_help_text()
+ 	Hotkeys.connect("binding_changed", self, "_on_hotkey_changed")
+ 	p1_turn_timer.connect("timeout", self, "_on_turn_timer_timeout", [1])
+ 	p2_turn_timer.connect("timeout", self, "_on_turn_timer_timeout", [2])
+-	for lobby in [$"%Lobby", $"%DirectConnectLobby", SteamLobby]:
+-		lobby.connect("quit_on_rematch", $"%RematchButton", "hide")
+-		lobby.connect("quit_on_rematch", self, "set", ["quit_on_rematch", true])
+ 	$"%HelpButton".connect("pressed", self, "toggle_help_screen")
++	_connect_multiplayer(multiplayer_button())
+ 	$"%OptionsBackButton".connect("pressed", $"%OptionsContainer", "hide")
++	_add_tab_hint()
+ 	$"%OptionsButton".connect("pressed", $"%OptionsContainer", "show")
+ 	$"%CreditsButton".connect("pressed", $"%Credits", "show")
+ 	$"%CreditsButton".connect("pressed", $"%MainMenu", "hide")
+@@ -270,7 +247,7 @@
+ 
+ 
+ 
+-	if not SteamHustle.STARTED:
++	if not OfflineCapabilities.STARTED:
+ 		pass
+ 
+ 
+@@ -286,17 +263,12 @@
+ 		$"%RoadmapContainer".show()
+ 
+ 	
+-	$NetworkSyncTimer.connect("timeout", self, "_on_network_timer_timeout")
+ 	quit_on_rematch = false
+ 	for node in global_option_check_buttons:
+ 		node.set_pressed_no_signal(Global.get(global_option_check_buttons[node]))
+ 		node.connect("toggled", self, "_on_global_option_toggled", [global_option_check_buttons[node]])
+ 	
+ 	$"%HelpScreen".hide()
+-	if SteamLobby.LOBBY_ID != 0:
+-		yield(get_tree(), "idle_frame")
+-
+-		_on_join_lobby_success()
+ 	$"%CharacterSelect".connect("opened", self, "reset_ui")
+ 
+ 	yield(get_tree(), "idle_frame")
+@@ -318,12 +290,6 @@
+ 
+ 
+ 
+-func on_workshop_uploader_clicked():
+-	hide_main_menu()
+-	$"%WorkshopMenu".init()
+-	$"%WorkshopMenu".show()
+-
+-	
+ func _on_music_button_toggled(on):
+ 	Global.set_music_enabled(on)
+ 	Global.save_options()
+@@ -390,7 +356,6 @@
+ 
+ func _on_name_color_publish_due():
+ 	Global.save_options()
+-	Global.publish_name_color()
+ 
+ func _on_name_color_reset_pressed():
+ 	
+@@ -407,7 +372,6 @@
+ 	Global.name_saturation = 0.5
+ 	Global.name_color_customized = false
+ 	Global.save_options()
+-	Global.publish_name_color()
+ 	_refresh_name_color_preview()
+ 
+ func _refresh_name_color_preview():
+@@ -415,10 +379,6 @@
+ 	
+ 	
+ 	var name_text = "preview"
+-	if SteamHustle.STARTED and SteamHustle.STEAM_ID:
+-		var steam_name = Steam.getFriendPersonaName(SteamHustle.STEAM_ID)
+-		if steam_name is String and steam_name != "":
+-			name_text = steam_name
+ 	$"%NameColorPreview".text = name_text
+ 	if Global.has_name_color():
+ 		$"%NameColorPreview".add_color_override("font_color", Global.get_name_color())
+@@ -451,17 +411,14 @@
+ func toggle_help_screen():
+ 	$"%HelpScreen".visible = not $"%HelpScreen".visible
+ 
+-func _on_join_lobby_success():
+-	if is_instance_valid(Global.current_game):
+-		return
+-	$"%HudLayer".hide()
+-	$"%SteamLobbyList".hide()
+-	$"%SteamLobby".show()
+-	$"%GameUI".hide()
+-	hide_main_menu(true)
+-
+-
+ func hide_main_menu(all = false):
++	# The play and multiplayer panels live under the menu so they can sit where its rows are.
++	# Hiding the menu therefore has to take them down too, or a panel is left floating over the
++	# character select with nothing behind it.
++	if is_instance_valid(play_panel):
++		play_panel.visible = false
++	if is_instance_valid(multiplayer_panel):
++		multiplayer_panel.visible = false
+ 	if all:
+ 		$"%MainMenu".hide()
+ 	else:
+@@ -473,24 +430,6 @@
+ 	load_replays()
+ 	hide_main_menu()
+ 
+-func _on_forfeit_button_pressed():
+-	if is_instance_valid(game) and not game.game_finished:
+-		var player_id = Network.player_id
+-		game.get_player(player_id).on_action_selected("Forfeit", null, null)
+-		Network.forfeit()
+-		forfeit_pressed = true
+-		actionable = false
+-	$"%PausePanel".hide()
+-
+-func _on_opponent_disconnected():
+-	if is_instance_valid(game) and not game.game_finished:
+-		game.get_player((game.my_id % 2) + 1).on_action_selected("Forfeit", null, null)
+-		Network.forfeit(true)
+-		print("opponent disconnected")
+-		forfeit_pressed = true
+-		actionable = false
+-	$"%PausePanel".hide()
+-
+ func _on_customize_pressed():
+ 	$"%MainMenu".hide()
+ 	$"%CustomizationScreen".init()
+@@ -703,46 +642,13 @@
+ func _load_replay_from_button(path):
+ 	var match_data = ReplayManager.load_replay(path)
+ 	$"%ReplayWindow".hide()
+-	if replay_picker_for_challenge:
+-		replay_picker_for_challenge = false
+-		$"%ReplayChallengeTitle".hide()
+-		$"%SteamLobby".show()
+-		emit_signal("replay_picked_for_challenge", match_data, path)
+-		return
+ 	emit_signal("loaded_replay", match_data)
+ 
+ func _on_replay_cancel_pressed():
+-	if replay_picker_for_challenge:
+-		replay_picker_for_challenge = false
+-		$"%ReplayWindow".hide()
+-		$"%ReplayChallengeTitle".hide()
+-		$"%SteamLobby".show()
+-		return
+ 	Global.reload()
+ 
+-func open_replay_picker_for_challenge(opponent_name = ""):
+-	replay_picker_for_challenge = true
+-	if opponent_name == "":
+-		$"%ReplayChallengeTitle".text = "Select a replay to resume with"
+-	else:
+-		$"%ReplayChallengeTitle".text = "Select a replay to resume with " + opponent_name
+-	$"%ReplayChallengeTitle".show()
+-	$"%SteamLobby".hide()
+-	load_replays()
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+ func will_forfeit():
+-	return not SteamLobby.SPECTATING and Network.multiplayer_active and is_instance_valid(game) and not game.game_finished and not game.forfeit and not ReplayManager.playback and not forfeit_pressed
++	return false # There is no online opponent in the offline build.
+ 
+ func can_quit():
+ 	return true
+@@ -757,22 +663,13 @@
+ 	$"%P2TurnTimerBar".hide()
+ 	$"%P2TurnTimerLabel".hide()
+ 	$"%GameUI".hide()
+-	$"%ChatWindow".hide()
+ 	$"%PostGameButtons".hide()
+ 	$"%OpponentDisconnectedLabel".hide()
+ 	forfeit_pressed = false
+ 	actionable = false
+ 
+ func _on_quit_button_pressed():
+-	if will_forfeit():
+-		_on_forfeit_button_pressed()
+-	else:
+-		if can_quit():
+-			if not Network.steam:
+-				Network.stop_multiplayer()
+-				Global.reload()
+-			else:
+-				SteamLobby.exit_match_from_button()
++	Global.reload()
+ 
+ func _on_quit_program_button_pressed():
+ 	get_tree().quit()
+@@ -872,17 +769,13 @@
+ 	forfeit_pressed = false
+ 	if not ReplayManager.playback:
+ 		$PostGameButtons.hide()
+-		$"%RematchButton".disabled = false
+ 	self.game = game
+ 	setup_action_buttons()
+-	if Network.multiplayer_active or SteamLobby.SPECTATING:
+-		game.connect("playback_requested", self, "_on_game_playback_requested")
+-		$"%ChatWindow".show()
+ 	game_started = false
+ 	timer_mode = game.match_data.get("timer_mode", "default")
+ 	
+ 	
+-	var show_timer = (Network.multiplayer_active or SteamLobby.SPECTATING) and timer_mode != "none"
++	var show_timer = (Network.multiplayer_active or false) and timer_mode != "none"
+ 	$"%P1TurnTimerLabel".visible = show_timer
+ 	$"%P2TurnTimerLabel".visible = show_timer
+ 	
+@@ -906,7 +799,7 @@
+ 	if not is_instance_valid(game):
+ 		return
+ 	lock_in_tick = game.current_tick
+-	if player_id != Network.player_id or SteamLobby.SPECTATING:
++	if player_id != Network.player_id or false:
+ 		$"%TurnReadySound".play()
+ 
+ 	turns_taken[player_id] = true
+@@ -920,49 +813,329 @@
+ 
+ 		p2_turn_timer.paused = true
+ 	
+-func _on_rematch_button_pressed():
+-	Network.request_rematch()
+-	$"%RematchButton".disabled = true
+-
+-func _on_game_playback_requested():
+-	if Network.multiplayer_active and not ReplayManager.resimulating:
+-		$PostGameButtons.show()
+-		
+-		
+-		
+-		
+-		
+-		
+-		
+-		if not quit_on_rematch and not SteamLobby.SPECTATING and not (is_instance_valid(game) and game.spectating):
+-			$"%RematchButton".show()
+-		else:
+-			$"%RematchButton".hide()
+-		Network.rematch_menu = true
+-
+ func on_game_started():
+-	lobby.hide()
+-	$"%SteamLobby".hide()
+ 	$MainMenu.hide()
+ 
+ func _on_singleplayer_pressed():
+ 	Global.frame_advance = false
+-	SteamLobby.leave_Lobby()
+ 	emit_signal("singleplayer_started")
+ 
+-func _on_direct_connect_button_pressed():
+-	direct_connect_lobby.show()
+-	hide_main_menu()
++
++# Cancelling character select used to reload the whole scene, which lands back on the title with
++# the menu already hidden - a dead end for a pad with no mouse. Bring the menu back instead.
++func return_to_main_menu():
++	hide_main_menu(false)
++	if is_instance_valid(play_panel):
++		play_panel.visible = false
++	if is_instance_valid(multiplayer_panel):
++		multiplayer_panel.visible = false
++	if not $"%MainMenu".visible:
++		$"%MainMenu".show()
++	$"%ButtonContainer".show()
++	var title = get_node_or_null("%Title")
++	if is_instance_valid(title):
++		title.show()
++	var roadmap = get_node_or_null("%RoadmapContainer")
++	if is_instance_valid(roadmap):
++		roadmap.show()
++	var cs = get_node_or_null("CharacterSelect")
++	if is_instance_valid(cs) and cs.visible:
++		cs.hide()
++	Gamepad.focus_first()
++
++
++# ------------------------------------------------------------------ play menu
++#
++# One "Play" button, then a small panel: versus CPU, or two players on one machine. The old
++# singleplayer button went straight to character select, which left nowhere to choose an
++# opponent. Both modes end in the normal character select and the normal match; nothing about
++# the match itself changes.
++
++var play_panel = null
++var multiplayer_panel = null
++
++
++func _build_play_menu():
++	if is_instance_valid(play_panel):
++		return
++	var menu = $MainMenu
++	var holder = Control.new()
++	holder.name = "PlayPanel"
++	holder.anchor_left = 0.5
++	holder.anchor_right = 0.5
++	holder.anchor_top = 0.5
++	holder.anchor_bottom = 0.5
++	# The menu buttons sit around the middle of the screen; the panel sits where they are so it
++	# covers them instead of the logo.
++	holder.margin_left = -100
++	holder.margin_right = 100
++	holder.margin_top = -64
++	holder.margin_bottom = 64
++	holder.visible = false
++	menu.add_child(holder)
++
++	var panel = Panel.new()
++	panel.mouse_filter = Control.MOUSE_FILTER_STOP
++	panel.anchor_right = 1.0
++	panel.anchor_bottom = 1.0
++	holder.add_child(panel)
++
++	var box = VBoxContainer.new()
++	box.name = "Box"
++	box.anchor_right = 1.0
++	box.anchor_bottom = 1.0
++	box.margin_left = 6
++	box.margin_right = -6
++	box.margin_top = 4
++	box.margin_bottom = -4
++	box.add_constant_override("separation", 2)
++	box.rect_min_size = Vector2(180, 96)
++	panel.add_child(box)
++
++	var title = Label.new()
++	title.name = "PlayTitle"
++	title.text = "SINGLEPLAYER"
++	title.align = Label.ALIGN_CENTER
++	title.rect_min_size = Vector2(0, 14)
++	box.add_child(title)
++
++	var subtitle = Label.new()
++	subtitle.name = "PlaySubtitle"
++	subtitle.text = "CPU skill"
++	subtitle.align = Label.ALIGN_CENTER
++	subtitle.rect_min_size = Vector2(0, 13)
++	subtitle.add_color_override("font_color", Color(0.62, 0.72, 0.78))
++	box.add_child(subtitle)
++
++	box.add_child(_play_option("Versus CPU", "_on_versus_cpu"))
++
++	var row = HBoxContainer.new()
++	row.name = "SkillRow"
++	row.alignment = BoxContainer.ALIGN_CENTER
++	box.add_child(row)
++	var left = Button.new()
++	left.text = "<"
++	left.rect_min_size = Vector2(20, 16)
++	left.connect("pressed", self, "_on_skill_step", [-1])
++	row.add_child(left)
++	var skill = Label.new()
++	skill.name = "SkillLabel"
++	skill.text = "Medium"
++	skill.align = Label.ALIGN_CENTER
++	skill.rect_min_size = Vector2(90, 16)
++	row.add_child(skill)
++	var right = Button.new()
++	right.text = ">"
++	right.rect_min_size = Vector2(20, 16)
++	right.connect("pressed", self, "_on_skill_step", [1])
++	row.add_child(right)
++
++	box.add_child(_play_option("Back", "_on_play_back"))
++	play_panel = holder
++	_refresh_skill_label()
++
++
++func _play_option(text, method):
++	var b = Button.new()
++	b.text = text
++	b.flat = false
++	b.rect_min_size = Vector2(0, 16)
++	b.focus_mode = Control.FOCUS_ALL
++	b.connect("pressed", self, method)
++	return b
++
++
++func _on_play_pressed():
++	if not is_instance_valid(play_panel):
++		return
++	play_panel.visible = true
++	play_panel.raise()
++	Gamepad.focus_first()
++
++
++func _on_play_back():
++	if is_instance_valid(play_panel):
++		play_panel.visible = false
++	if is_instance_valid(multiplayer_panel):
++		multiplayer_panel.visible = false
++		var b = $"%SingleplayerButton"
++		if is_instance_valid(b):
++			b.grab_focus()
++		Gamepad.focus_first()
++
++
++func _on_skill_step(step):
++	var order = Global.AI_SKILL_ORDER
++	var i = order.find(Global.ai_settings.get("skill", "Medium"))
++	i = int(clamp(i + step, 0, order.size() - 1))
++	Global.ai_settings["skill"] = order[i]
++	_refresh_skill_label()
++	Gamepad.focus_first()
++
++
++func _refresh_skill_label():
++	if not is_instance_valid(play_panel):
++		return
++	var l = play_panel.find_node("SkillLabel", true, false)
++	if is_instance_valid(l):
++		l.text = str(Global.ai_settings.get("skill", "Medium"))
++
++
++func _on_versus_cpu():
++	Global.ai_settings["mode"] = "cpu"
++	Global.ai_settings["ai_player"] = 2
++	_on_play_back()
++	_on_singleplayer_pressed()
++
++
++# Multiplayer is its own screen rather than a line in the play panel: it is a different way to
++# play, not a difficulty setting. Local only - two people, one machine, one controller passed
++# back and forth.
++# The Multiplayer row is declared in Main.tscn. Looking it up with "%MultiplayerButton" throws a
++# hard "Node not found" (and then a null-instance error on .connect) if the scene and this script
++# have drifted apart - a patched script dropped into an unpatched project, or the reverse. Find it
++# the tolerant way instead, and put the row back if the scene does not have one.
++func multiplayer_button():
++	var btn = get_node_or_null("MainMenu/ButtonContainer/MultiplayerButton")
++	if is_instance_valid(btn):
++		return btn
++	var rows = get_node_or_null("MainMenu/ButtonContainer")
++	if not is_instance_valid(rows):
++		return null
++	var single = rows.get_node_or_null("SingleplayerButton")
++	if not is_instance_valid(single):
++		return null
++	# Same look as the row it sits under, so a scene that predates this button still matches.
++	var made = Button.new()
++	made.name = "MultiplayerButton"
++	made.text = "Multiplayer"
++	made.flat = single.flat
++	made.mouse_default_cursor_shape = single.mouse_default_cursor_shape
++	made.rect_min_size = single.rect_min_size
++	# custom_colors/* is a theme override, not a property: get_property_list() lists it with a
++	# nil value, so copy the two the menu actually uses by name.
++	for slot in ["font_color", "font_color_hover"]:
++		var col = single.get("custom_colors/" + slot)
++		if col is Color:
++			made.add_color_override(slot, col)
++	rows.add_child(made)
++	rows.move_child(made, single.get_index() + 1)
++	_connect_multiplayer(made)
++	return made
++
++
++# Connecting twice is an error in Godot 3, and this row can be built either by the scene or by
++# the helper above, so every path goes through here.
++func _connect_multiplayer(btn):
++	if is_instance_valid(btn) and not btn.is_connected("pressed", self, "_on_multiplayer_pressed"):
++		btn.connect("pressed", self, "_on_multiplayer_pressed")
++
+ 
+ func _on_multiplayer_pressed():
+-	SteamLobby.leave_Lobby()
+-	lobby.show()
+-	hide_main_menu()
+-	
+-func _on_steam_multiplayer_pressed():
+-	$"%SteamLobbyList".show()
+-	hide_main_menu()
+-	
++	_build_multiplayer_menu()
++	if not is_instance_valid(multiplayer_panel):
++		return
++	if is_instance_valid(play_panel):
++		play_panel.visible = false
++	var rows = $"%ButtonContainer"
++	if is_instance_valid(rows):
++		rows.hide()
++	multiplayer_panel.visible = true
++	multiplayer_panel.raise()
++	Gamepad.focus_first()
++
++
++func _build_multiplayer_menu():
++	if is_instance_valid(multiplayer_panel):
++		return
++	var menu = $MainMenu
++	var holder = Control.new()
++	holder.name = "MultiplayerPanel"
++	holder.anchor_left = 0.5
++	holder.anchor_right = 0.5
++	holder.anchor_top = 0.5
++	holder.anchor_bottom = 0.5
++	holder.margin_left = -115
++	holder.margin_right = 115
++	holder.margin_top = -46
++	holder.margin_bottom = 46
++	holder.visible = false
++	menu.add_child(holder)
++
++	var panel = Panel.new()
++	panel.mouse_filter = Control.MOUSE_FILTER_STOP
++	panel.anchor_right = 1.0
++	panel.anchor_bottom = 1.0
++	holder.add_child(panel)
++
++	var box = VBoxContainer.new()
++	box.name = "Box"
++	box.anchor_right = 1.0
++	box.anchor_bottom = 1.0
++	box.margin_left = 6
++	box.margin_right = -6
++	box.margin_top = 4
++	box.margin_bottom = -4
++	box.add_constant_override("separation", 2)
++	box.rect_min_size = Vector2(200, 74)
++	panel.add_child(box)
++
++	var title = Label.new()
++	title.text = "MULTIPLAYER"
++	title.align = Label.ALIGN_CENTER
++	title.rect_min_size = Vector2(0, 14)
++	box.add_child(title)
++
++	# Separate rows rather than one multi-line label: a Label with baked line breaks is measured
++	# as a single 11 px row by this theme and the text then draws over its neighbours.
++	for line in ["Two players, one machine.", "Player 1 moves, then pass", "the controller to player 2."]:
++		var blurb = Label.new()
++		blurb.text = line
++		blurb.align = Label.ALIGN_CENTER
++		blurb.rect_min_size = Vector2(0, 13)
++		blurb.add_color_override("font_color", Color(0.62, 0.72, 0.78))
++		box.add_child(blurb)
++
++	var start = Button.new()
++	start.text = "Start"
++	start.rect_min_size = Vector2(0, 16)
++	start.focus_mode = Control.FOCUS_ALL
++	start.connect("pressed", self, "_on_hotseat")
++	box.add_child(start)
++
++	var back = Button.new()
++	back.text = "Back"
++	back.rect_min_size = Vector2(0, 16)
++	back.focus_mode = Control.FOCUS_ALL
++	back.connect("pressed", self, "_on_multiplayer_back")
++	box.add_child(back)
++
++	multiplayer_panel = holder
++
++
++func _on_multiplayer_back():
++	if is_instance_valid(multiplayer_panel):
++		multiplayer_panel.visible = false
++	$MainMenu.show()
++	var rows = $"%ButtonContainer"
++	if is_instance_valid(rows):
++		rows.show()
++	var b = multiplayer_button()
++	if is_instance_valid(b):
++		b.grab_focus()
++	Gamepad.focus_first()
++
++
++func _on_hotseat():
++	Global.ai_settings["mode"] = "hotseat"
++	if is_instance_valid(multiplayer_panel):
++		multiplayer_panel.visible = false
++	$MainMenu.show()
++	var rows = $"%ButtonContainer"
++	if is_instance_valid(rows):
++		rows.show()
++	_on_play_back()
++	_on_singleplayer_pressed()
+ 
+ func _on_turn_ready():
+ 	$"%P1TurnTimerBar".hide()
+@@ -1029,11 +1202,11 @@
+ 
+ 
+ 
+-	if Network.multiplayer_active or SteamLobby.SPECTATING:
++	if Network.multiplayer_active or false:
+ 
+ 		var wait_start = OS.get_ticks_msec()
+ 		while not (Network.can_open_action_buttons):
+-			if OS.get_ticks_msec() - wait_start > 3000 and not SteamLobby.SPECTATING:
++			if OS.get_ticks_msec() - wait_start > 3000 and not false:
+ 				print("button-open watchdog: stuck waiting >3s, resending end_turn_simulation")
+ 				if is_instance_valid(game):
+ 					Network.rpc_("end_turn_simulation", [game.current_tick, Network.player_id])
+@@ -1187,12 +1360,7 @@
+ func pause():
+ 	$"%PausePanel".visible = not $"%PausePanel".visible
+ 	if $"%PausePanel".visible:
+-		if will_forfeit():
+-			$"%QuitToMainMenuButton".hide()
+-			$"%ForfeitButton".show()
+-		else:
+-			$"%QuitToMainMenuButton".show()
+-			$"%ForfeitButton".hide()
++		$"%QuitToMainMenuButton".show()
+ 		$"%SaveReplayButton".disabled = false
+ 		$"%SaveReplayButton".text = "save replay"
+ 		$"%SaveReplayLabel".text = ""
+@@ -1227,7 +1395,10 @@
+ 		if key_name == "":
+ 			continue
+ 		parts.append("%s: %s" % [key_name, entry[1]])
+-	return PoolStringArray(parts).join(" - ")
++	var line = PoolStringArray(parts).join(" - ")
++	if is_instance_valid(Gamepad) and Gamepad.mode == Gamepad.MODE_GAMEPAD:
++		line += "   PAD: right stick = cursor/aim, A lock in, B back, X watch replay, Y reverse, R3 feint, LB/RB or LT/RT category - RT reaches Lock In"
++	return line
+ 
+ func _unhandled_input(event):
+ 	if event is InputEventKey and event.pressed and event.scancode == KEY_ESCAPE:
+@@ -1235,10 +1406,6 @@
+ 			$"%OptionsContainer".hide()
+ 			get_tree().set_input_as_handled()
+ 			return
+-	if event.is_action_pressed(Hotkeys.OPEN_CHAT):
+-		if is_instance_valid(game):
+-			$"%ChatWindow".show()
+-			$"%ChatWindow".line_edit_focus()
+ 	if event.is_action_pressed(Hotkeys.TOGGLE_HUD):
+ 		visible = not visible
+ 		$"../HudLayer/HudLayer".visible = not $"../HudLayer/HudLayer".visible
+@@ -1313,9 +1480,6 @@
+ 
+ 
+ 
+-	if event is InputEventMouseButton:
+-		if event.pressed:
+-			$"%ChatWindow".unfocus_line_edit()
+ 
+ func time_convert(time_in_sec):
+ 	var seconds = time_in_sec % 60
+@@ -1522,7 +1686,7 @@
+ 	$"%SoftlockResetButton".visible = false
+ 	if Network.multiplayer_active and is_instance_valid(game):
+ 		var my_action_buttons = p1_action_buttons if Network.player_id == 1 else p2_action_buttons
+-		$"%SoftlockResetButton".visible = ( not my_action_buttons.visible or my_action_buttons.get_node("%SelectButton").disabled) and actionable_time > 5 and not (game.game_finished or ReplayManager.playback) and not SteamLobby.SPECTATING
++		$"%SoftlockResetButton".visible = ( not my_action_buttons.visible or my_action_buttons.get_node("%SelectButton").disabled) and actionable_time > 5 and not (game.game_finished or ReplayManager.playback) and not false
+ 		if not $"%SoftlockResetButton".visible:
+ 			$"%SoftlockResetButton".disabled = false
+ 
+@@ -1791,6 +1955,46 @@
+ 	return Vector2(cos(final_angle), sin(final_angle)) * final_radius
+ 
+ 
+-func _on_WorkshopUploader_pressed():
+-	on_workshop_uploader_clicked()
+-	pass
++func _open_external_url(url):
++	OS.shell_open(url)
++
++# The tabs used to be mouse-only and the pad could only walk the page it was already on, so a
++# player on a pad had no way of reaching Personalization without touching the mouse. The
++# triggers change tabs now; this line sits under the panel so that is discoverable. It is a
++# sibling of the panel rather than a child because the pages fill the panel's whole body.
++func _add_tab_hint():
++	var panel = $"%OptionsContainer"
++	if not is_instance_valid(panel):
++		return
++	var parent = panel.get_parent()
++	if not is_instance_valid(parent):
++		return
++	if parent.has_node("TabHint"):
++		return
++	var hint = Label.new()
++	hint.name = "TabHint"
++	hint.text = "LT / RT switch tab  -  A picks the tab you are on"
++	hint.align = Label.ALIGN_CENTER
++	hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
++	hint.add_color_override("font_color", Color(0.62, 0.72, 0.78))
++	hint.visible = panel.visible
++	parent.add_child(hint)
++	panel.connect("visibility_changed", self, "_sync_tab_hint", [panel, hint])
++	panel.connect("resized", self, "_place_tab_hint", [panel, hint])
++	# The panel is laid out after _ready, so the first placement has to wait a frame.
++	call_deferred("_place_tab_hint", panel, hint)
++
++
++# set_visible has no sensible zero-argument form, so the hint is toggled through here.
++func _sync_tab_hint(panel, hint):
++	if is_instance_valid(panel) and is_instance_valid(hint):
++		hint.visible = panel.visible
++
++
++# Under the bottom edge of the options panel, whatever size the theme gives it.
++func _place_tab_hint(panel, hint):
++	if not (is_instance_valid(panel) and is_instance_valid(hint)):
++		return
++	var r = panel.get_rect()
++	hint.rect_position = r.position + Vector2(0, r.size.y + 4)
++	hint.rect_size = Vector2(r.size.x, 16)

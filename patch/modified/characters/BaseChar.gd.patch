@@ -1,0 +1,48 @@
+--- a/characters/BaseChar.gd
++++ b/characters/BaseChar.gd
+@@ -1004,18 +1004,18 @@
+ 		particle.visible = true
+ 
+ func is_ivy():
+-	if SteamLobby.SPECTATING or not Network.multiplayer_active:
++	if false or not Network.multiplayer_active:
+ 		var username = Network.pid_to_username(id)
+-		return username in SteamHustle.FX_NAMES
++		return username in OfflineCapabilities.FX_NAMES
+ 	if id in Network.network_ids:
+-		return Network.network_ids[id] in SteamHustle.FX_IDS
++		return Network.network_ids[id] in OfflineCapabilities.FX_IDS
+ 	return false
+ 
+ 
+ 
+ 
+ func apply_style(style):
+-	if ( not SteamHustle.STARTED) or Global.steam_demo_version:
++	if ( not OfflineCapabilities.STARTED) or Global.steam_demo_version:
+ 		return
+ 	
+ 	if style != null and not is_ghost:
+@@ -1132,18 +1132,16 @@
+ 		return id == Network.player_id
+ 	return default
+ 
+-func unlock_achievement(achievement_name, multiplayer_only = false):
+-	if not can_unlock_achievements():
+-		return
+-	if is_you( not multiplayer_only):
+-		SteamHustle.unlock_achievement(achievement_name)
++func unlock_achievement(_achievement_name, _multiplayer_only = false):
++	# Calls from gameplay state scripts intentionally do not award online achievements.
++	return
+ 
+ func can_unlock_achievements():
+ 	if ReplayManager.playback or ReplayManager.replaying_ingame:
+ 		return false
+ 	if is_ghost:
+ 		return false
+-	if SteamLobby.SPECTATING:
++	if false:
+ 		return false
+ 	return is_you()
+ 

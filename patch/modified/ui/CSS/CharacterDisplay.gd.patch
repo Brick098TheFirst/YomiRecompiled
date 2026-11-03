@@ -1,0 +1,11 @@
+--- a/ui/CSS/CharacterDisplay.gd
++++ b/ui/CSS/CharacterDisplay.gd
+@@ -204,7 +204,7 @@
+ 	$"%LoadStyleButton".save_style = true
+ 	$"%LoadStyleButton".update_styles()
+ 	$"%LoadStyleButton".hide()
+-	if SteamHustle.STARTED and ( not Network.multiplayer_active or player_id == Network.player_id):
++	if OfflineCapabilities.STARTED and ( not Network.multiplayer_active or player_id == Network.player_id):
+ 		$"%LoadStyleButton".show()
+ 
+ func load_character_data(data):

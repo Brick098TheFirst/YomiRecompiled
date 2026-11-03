@@ -1,0 +1,27 @@
+--- a/modloader/ModLoaderMenu.gd
++++ b/modloader/ModLoaderMenu.gd
+@@ -22,8 +22,6 @@
+ 	$"%Close".connect("pressed", self, "_close_clicked")
+ 	$"%ModsLocation".connect("pressed", self, "_open_mods_folder")
+ 	$"%ModCredits".connect("pressed", self, "_credits_clicked")
+-	$"%WorkshopUploader".connect("pressed", self, "_uploader_clicked")
+-	$"%WorkshopButton".connect("pressed", self, "_workshop_clicked")
+ 	hide()
+ 
+ 
+@@ -34,15 +32,6 @@
+ 	var modPathPrefix = gameInstallDirectory.plus_file("mods")
+ 	OS.shell_open(modPathPrefix)
+ 
+-func _uploader_clicked():
+-	hide()
+-	emit_signal("uploader_clicked")
+-
+-func _workshop_clicked():
+-
+-	Steam.activateGameOverlayToWebPage("https://steamcommunity.com/app/2212330/workshop/")
+-
+-
+ func _credits_clicked():
+ 	get_node("/root/Main/UILayer/ModLoaderCredits").show()
+ 	get_node("/root/Main/UILayer/ModLoaderCredits").raise()

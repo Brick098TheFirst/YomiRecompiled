@@ -1,0 +1,302 @@
+--- a/main.gd
++++ b/main.gd
+@@ -9,6 +9,7 @@
+ 
+ 
+ var hooks = null
++var cpu_director = null
+ 
+ var singleplayer = false
+ var game
+@@ -42,8 +43,10 @@
+ 	pass
+ 
+ func _ready():
+-	
+-	
++	# Offline build: music is started once from Global, but anything that stops the
++	# player later (a stalled device, a dropped stream) would leave the menu silent for
++	# good. Re-check whenever the main scene comes up.
++	Global.play_song_if_idle()
+ 	
+ 	if ModLoader.active:
+ 		hooks = get_node_or_null("Hooks")
+@@ -53,16 +56,9 @@
+ 	
+ 	
+ 	
+-	if SteamLobby.LOBBY_ID != 0:
+-		SteamLobby.apply_busy_mode()
+ 	ui_layer.connect("singleplayer_started", self, "_on_game_started", [true])
+ 	ui_layer.connect("loaded_replay", self, "_on_loaded_replay")
+ 	connect("game_started", ui_layer, "on_game_started")
+-	Network.connect("start_game", self, "_on_game_started", [false])
+-	Network.connect("match_ready", self, "_on_match_ready")
+-	Network.connect("force_open_action_buttons", self, "_on_multiplayer_turn_started")
+-	Network.connect("style_save_response_received", self, "_on_style_save_response_received")
+-	SteamLobby.connect("received_spectator_match_data", self, "_on_received_spectator_match_data")
+ 	$"%P1ActionButtons".connect("action_clicked", self, "on_action_clicked", [1])
+ 	$"%P2ActionButtons".connect("action_clicked", self, "on_action_clicked", [2])
+ 	$"%GhostButton".connect("toggled", self, "_on_ghost_button_toggled")
+@@ -88,19 +84,13 @@
+ 	$"%GameUI".hide()
+ 	$"%MainMenu".show()
+ 	ReplayManager.play_full = false
+-	if Network.multiplayer_active:
+-		Network.stop_multiplayer()
+-	Network.connect("player_disconnected", self, "_on_player_disconnected")
+ 	$"%FreezeOnMyTurn".set_pressed_no_signal(Global.freeze_ghost_prediction)
+ 	$"%AfterimageButton".set_pressed_no_signal(Global.ghost_afterimages)
+ 
+-	SteamLobby.SETTINGS_LOCKED = false
+ 	randomize()
+ 	$"%NagWindow".hide()
+ 	$"%NagWindow".rect_position = Vector2(randi() % 640, randi() % 360)
+-	Global.connect("nag_window", $"%NagWindow", "show")
+-	SteamLobby._stop_spectating()
+-	SteamLobby.quit_match()
++	# offline build: the "buy it on Steam" nag window is not connected
+ 	$"%P1ShowStyle".connect("toggled", self, "_on_show_style_toggled", [1])
+ 	$"%P2ShowStyle".connect("toggled", self, "_on_show_style_toggled", [2])
+ 	ReplayManager.replaying_ingame = false
+@@ -156,16 +146,6 @@
+ 		if hud and hud.has_method("refresh_portrait_style"):
+ 			hud.refresh_portrait_style(player_id)
+ 
+-func _on_player_disconnected():
+-	if hooks:
+-		hooks.player_disconnected()
+-	$"%OpponentDisconnectedLabel".show()
+-
+-	ui_layer._on_opponent_disconnected()
+-	
+-	if not is_instance_valid(game):
+-		Global.reload()
+-
+ func _on_game_started(singleplayer):
+ 	ui_layer.reset_ui()
+ 	if is_instance_valid(game):
+@@ -183,9 +163,6 @@
+ 
+ 	$"%CharacterSelect".show()
+ 	$"%CharacterSelect".init(singleplayer)
+-	$"%DirectConnectLobby".hide()
+-	$"%Lobby".hide()
+-	$"%SteamLobby".hide()
+ 	if hooks:
+ 		hooks.game_started(singleplayer)
+ 
+@@ -200,21 +177,6 @@
+ 	match_data["replay"] = true
+ 	_on_match_ready(match_data)
+ 
+-func _on_received_spectator_match_data(data):
+-
+-
+-	
+-	
+-	var spectate_label = $"%SteamLobby".get_node_or_null("LoadingSpectatorRect/SpectateStatusLabel")
+-	if spectate_label:
+-		spectate_label.text = "Spectating...\n(Loading Characters, this may take a while)"
+-	var spectate_cancel = $"%SteamLobby".get_node_or_null("LoadingSpectatorRect/SpectateCancelButton")
+-	if spectate_cancel:
+-		spectate_cancel.hide()
+-	_Global.css_instance.net_loadReplayChars([data.selected_characters[1]["name"], data.selected_characters[2]["name"], data])
+-	data["spectating"] = true
+-	_on_match_ready(data)
+-
+ func _on_match_ready(data):
+ 	Utils.normalize_timer_settings(data)
+ 	match_data = data
+@@ -232,67 +194,19 @@
+ 	_set_save_style_button_disabled(1, false)
+ 	_set_save_style_button_disabled(2, false)
+ 	if match_data.has("replay_challenge"):
+-		singleplayer = false
++		push_error("Online replay challenges are not supported in this offline project")
++		return
+ 	elif match_data.has("replay"):
+ 		singleplayer = true
+ 	else:
+ 		singleplayer = data["singleplayer"]
+ 	if not match_data.has("replay") and not match_data.has("replay_challenge"):
+ 		ReplayManager.playback = false
+-	if match_data.has("replay_challenge") and match_data.has("selected_characters"):
+-		yield(_load_replay_chars_and_wait(match_data), "completed")
+-	SteamLobby.SETTINGS_LOCKED = false
+ 	setup_game(singleplayer, data)
+ 	emit_signal("game_started")
+ 
+-func _load_replay_chars_and_wait(match_data):
+-	var loading_rect = $"%SteamLobby".get_node_or_null("ReplayLoadingRect")
+-	var label = null
+-	if loading_rect:
+-		label = loading_rect.get_node_or_null("ReplayLoadingLabel")
+-		loading_rect.show()
+-		if label:
+-			label.text = "Loading replay characters..."
+-		yield(get_tree(), "idle_frame")
+-		yield(get_tree(), "idle_frame")
+-	var css = _Global.css_instance
+-	var my_side = Network.player_id
+-	for player_id in [1, 2]:
+-		var char_name = match_data.selected_characters[player_id]["name"]
+-		if not css.isCustomChar(char_name):
+-			continue
+-		var is_mine = (player_id == my_side)
+-		if label:
+-			if is_mine:
+-				label.text = "Loading your character: " + css.getCharName(char_name) + "..."
+-			else:
+-				label.text = "Loading opponent's character: " + css.getCharName(char_name) + "..."
+-		yield(get_tree(), "idle_frame")
+-		yield(get_tree(), "idle_frame")
+-		var idx = css.name_to_index.get(char_name)
+-		if idx == null:
+-			idx = css.name_to_index.get(css.retro_charName(char_name))
+-		if idx != null:
+-			css.loadListChar(idx, not is_mine)
+-		yield(get_tree(), "idle_frame")
+-	
+-	
+-	if not match_data.get("spectating"):
+-		if label:
+-			label.text = "Waiting for opponent to load their character..."
+-		yield(get_tree(), "idle_frame")
+-		SteamLobby.signal_replay_mods_loaded()
+-		while not SteamLobby.remote_replay_mods_loaded:
+-			yield(get_tree(), "idle_frame")
+-	if loading_rect:
+-		loading_rect.hide()
+-
+-
+-func show_lobby():
+-	$"%DirectConnectLobby".show()
+-	$"%Lobby".show()
+-
+ func setup_game(singleplayer, data):
++	_start_cpu_director()
+ 	hide_main_menu(true)
+ 	if is_instance_valid(game):
+ 		game.queue_free()
+@@ -453,13 +367,13 @@
+ 	
+ 	
+ 	
+-	var saving_own = not is_replay and not SteamLobby.SPECTATING and ( not Network.multiplayer_active or Network.player_id == player_id)
++	var saving_own = not is_replay and ( not Network.multiplayer_active or Network.player_id == player_id)
+ 	var i_am_chain_owner = _is_chain_latest(src)
+ 	if Global.STYLE_SAVE_FEATURE_ENABLED and not saving_own and not i_am_chain_owner and src is Dictionary and not src.get("allow_others_save", true):
+ 		
+ 		
+ 		
+-		var in_lobby = Network.multiplayer_active or SteamLobby.SPECTATING
++		var in_lobby = Network.multiplayer_active
+ 		if not in_lobby:
+ 			$"%SaveReplayLabel".text = "p%d's style is not shareable" % player_id
+ 			return
+@@ -479,7 +393,7 @@
+ func _is_chain_latest(style) -> bool:
+ 	if not (style is Dictionary):
+ 		return false
+-	var sid = SteamHustle.STEAM_ID
++	var sid = OfflineCapabilities.STEAM_ID
+ 	if sid == null or typeof(sid) != TYPE_INT or sid <= 0:
+ 		return false
+ 	var my_id = str(sid)
+@@ -535,7 +449,7 @@
+ 
+ func _style_response_for_me(requester_id, requester_name) -> bool:
+ 	if Network.steam:
+-		return requester_id != 0 and requester_id == SteamHustle.STEAM_ID
++		return requester_id != 0 and requester_id == OfflineCapabilities.STEAM_ID
+ 	return requester_name == Global.get_player_data().username
+ 
+ 
+@@ -565,6 +479,27 @@
+ 		return p2_name.split("__")[1]
+ 	return p2_name
+ 
++# The CPU opponent and the hot-seat handover are both driven from here: they need to see the
++# match and the action panels, and Main owns both.
++func _start_cpu_director():
++	if is_instance_valid(cpu_director):
++		cpu_director.stop()
++		cpu_director.queue_free()
++		cpu_director = null
++	var mode = str(Global.ai_settings.get("mode", "off"))
++	if mode == "off":
++		return
++	cpu_director = preload("res://ai/CPUDirector.gd").new()
++	cpu_director.name = "CPUDirector"
++	# Add it first: _ready() is what builds the brain and the sandbox, so the settings below
++	# have something to talk to.
++	add_child(cpu_director)
++	cpu_director.mode = mode
++	cpu_director.ai_player = int(Global.ai_settings.get("ai_player", 2))
++	cpu_director.skill = str(Global.ai_settings.get("skill", "Medium"))
++	cpu_director.brain.set_skill(cpu_director.skill)
++
++
+ func setup_game_deferred(singleplayer, data):
+ 	game = preload("res://Game.tscn").instance()
+ 	game_layer.add_child(game)
+@@ -576,31 +511,11 @@
+ 	Network.game = game
+ 	
+ 	if not data.has("user_data"):
+-		var ud: = {}
+-		if Network.multiplayer_active:
+-			ud["p1"] = Network.pid_to_username(1)
+-			ud["p2"] = Network.pid_to_username(2)
+-			
+-			
+-			if Network.steam:
+-				var p1_steam = SteamLobby.steam_id_for_match_side(1)
+-				var p2_steam = SteamLobby.steam_id_for_match_side(2)
+-				var p1_col = Global.get_remote_name_color(p1_steam) if p1_steam != 0 else null
+-				var p2_col = Global.get_remote_name_color(p2_steam) if p2_steam != 0 else null
+-				if p1_col != null:
+-					ud["p1_color"] = p1_col.to_html(false)
+-				if p2_col != null:
+-					ud["p2_color"] = p2_col.to_html(false)
+-			elif Global.has_name_color():
+-				
+-				
+-				ud["p" + str(Network.player_id) + "_color"] = Global.get_name_color().to_html(false)
+-		else:
+-			ud["p1"] = Global.get_player_data().username
+-			ud["p2"] = _format_p2_name(data.selected_characters[2]["name"])
+-			
+-			if Global.has_name_color():
+-				ud["p1_color"] = Global.get_name_color().to_html(false)
++		var ud = {}
++		ud["p1"] = Global.get_player_data().username
++		ud["p2"] = _format_p2_name(data.selected_characters[2]["name"])
++		if Global.has_name_color():
++			ud["p1_color"] = Global.get_name_color().to_html(false)
+ 		data["user_data"] = ud
+ 	
+ 	if game.start_game(singleplayer, data) is bool:
+@@ -673,12 +588,6 @@
+ 	_maybe_save_backup()
+ 	_reset_save_replay_button()
+ 
+-func _on_multiplayer_turn_started():
+-	_maybe_save_backup()
+-	_reset_save_replay_button()
+-
+-
+-
+ func _reset_save_replay_button():
+ 	var btn = get_node_or_null("%SaveReplayButton")
+ 	if btn == null:
+@@ -689,8 +598,6 @@
+ func _maybe_save_backup():
+ 	if not is_instance_valid(game):
+ 		return
+-	if SteamLobby.SPECTATING:
+-		return
+ 	if game.current_tick == last_backup_tick:
+ 		return
+ 	last_backup_tick = game.current_tick

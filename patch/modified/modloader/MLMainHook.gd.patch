@@ -1,0 +1,10 @@
+--- a/modloader/MLMainHook.gd
++++ b/modloader/MLMainHook.gd
+@@ -21,7 +21,6 @@
+ 	var uilayer = $"%OptionsContainer/.."
+ 	uilayer.add_child_below_node($"%OptionsContainer", credits, true)
+ 	uilayer.add_child_below_node($"%OptionsContainer", menu, true)
+-	menu.connect("uploader_clicked", uilayer, "on_workshop_uploader_clicked")
+ 	var btn: Node = addMainMenuButton("Mod List")
+ 	btn.connect("pressed", menu, "_mainmenu_button_pressed")
+ 	return menu

@@ -1,0 +1,24 @@
+--- a/modloader/ModLoaderMenu.tscn
++++ b/modloader/ModLoaderMenu.tscn
+@@ -111,21 +111,5 @@
+ size_flags_horizontal = 3
+ text = "ModLoader Credits"
+ 
+-[node name="WorkshopButton" type="Button" parent="VBoxContainer/Panel/HBoxContainer" index="1"]
+-unique_name_in_owner = true
+-margin_left = 133.0
+-margin_right = 265.0
+-margin_bottom = 12.0
+-size_flags_horizontal = 3
+-text = "Visit Steam Workshop"
+-
+-[node name="WorkshopUploader" type="Button" parent="VBoxContainer/Panel/HBoxContainer" index="2"]
+-unique_name_in_owner = true
+-margin_left = 266.0
+-margin_right = 398.0
+-margin_bottom = 12.0
+-size_flags_horizontal = 3
+-text = "Upload to Steam Workshop"
+-
+ [node name="ButtonSoundPlayer" parent="." index="1" instance=ExtResource( 4 )]
+ button_containers = [ NodePath("../VBoxContainer/TitleBar"), NodePath("../VBoxContainer/Contents/HBoxContainer/ScrollContainer/Mods"), NodePath("../VBoxContainer/Contents/HBoxContainer/ModInfoContainer/TabContainer/Mod Info"), NodePath("../VBoxContainer/Panel/HBoxContainer") ]

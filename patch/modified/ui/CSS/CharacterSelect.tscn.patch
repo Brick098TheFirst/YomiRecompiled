@@ -1,0 +1,7 @@
+--- a/ui/CSS/CharacterSelect.tscn
++++ b/ui/CSS/CharacterSelect.tscn
+@@ -140,4 +140,3 @@
+ text = "Loading..."
+ align = 1
+ 
+-[connection signal="visibility_changed" from="." to="." method="_on_CharacterSelect_visibility_changed"]

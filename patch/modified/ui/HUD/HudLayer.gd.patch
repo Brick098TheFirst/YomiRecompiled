@@ -1,0 +1,79 @@
+--- a/ui/HUD/HudLayer.gd
++++ b/ui/HUD/HudLayer.gd
+@@ -127,7 +127,7 @@
+ 	p2_air_movement_label.text = p2.air_option_bar_name
+ 	
+ 
+-	if Network.multiplayer_active and not SteamLobby.SPECTATING:
++	if Network.multiplayer_active and not false:
+ 		$"%P1Username".text = Network.pid_to_username(1)
+ 		$"%P2Username".text = Network.pid_to_username(2)
+ 	elif game.match_data.has("user_data"):
+@@ -154,14 +154,7 @@
+ 	if ud.get("p2_color") is String and ud.p2_color != "":
+ 		p2_color = Color("#" + ud.p2_color)
+ 	if p1_color == null or p2_color == null:
+-		if Network.steam:
+-			var p1_steam = SteamLobby.steam_id_for_match_side(1)
+-			var p2_steam = SteamLobby.steam_id_for_match_side(2)
+-			if p1_color == null and p1_steam != 0:
+-				p1_color = Global.get_remote_name_color(p1_steam)
+-			if p2_color == null and p2_steam != 0:
+-				p2_color = Global.get_remote_name_color(p2_steam)
+-		elif not SteamLobby.SPECTATING and Global.has_name_color():
++		if Global.has_name_color():
+ 			
+ 			
+ 			
+@@ -242,7 +235,6 @@
+ 		$"%WinLabel".text = "DRAW"
+ 	else:
+ 		$"%WinLabel".text = "P" + str(winner) + " WIN"
+-	SteamHustle.record_winner(winner)
+ 
+ func super_speed_scale(ticks):
+ 	return 15 * (15 / float(ticks))
+@@ -252,35 +244,6 @@
+ 
+ 
+ 
+-func _publish_local_hp_pct():
+-	if not Network.steam or not Network.multiplayer_active or SteamLobby.SPECTATING:
+-		return
+-	if SteamLobby.LOBBY_ID == 0:
+-		return
+-	
+-	
+-	
+-	if is_instance_valid(game) and game.is_in_replay:
+-		return
+-	var local_fighter
+-	if Network.player_id == 1:
+-		local_fighter = p1
+-	elif Network.player_id == 2:
+-		local_fighter = p2
+-	else:
+-		return
+-	if local_fighter == null or local_fighter.MAX_HEALTH <= 0:
+-		return
+-	var pct = int(max(local_fighter.get_visual_hp(), 0) * 100 / local_fighter.MAX_HEALTH)
+-	if pct == _last_published_hp_pct:
+-		return
+-	var now = OS.get_ticks_msec()
+-	if now - _last_hp_publish_msec < HP_PUBLISH_MIN_INTERVAL_MS:
+-		return
+-	_last_published_hp_pct = pct
+-	_last_hp_publish_msec = now
+-	Steam.setLobbyMemberData(SteamLobby.LOBBY_ID, "hp_pct", str(pct))
+-
+ func drain_health_trail(trail, drain_value):
+ 	if drain_value < trail.value:
+ 		trail.value -= TRAIL_DRAIN_RATE
+@@ -328,7 +291,6 @@
+ 
+ 		p1_healthbar.value = max(p1.get_visual_hp(), 0)
+ 		p2_healthbar.value = max(p2.get_visual_hp(), 0)
+-		_publish_local_hp_pct()
+ 		if p2_prev_super < p2.supers_available:
+ 			p2_super_meter.value = p2.MAX_SUPER_METER
+ 			active_p2_super_meter.value = p2.MAX_SUPER_METER

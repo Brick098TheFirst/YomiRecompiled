@@ -1,0 +1,68 @@
+--- a/ui/Credits.tscn
++++ b/ui/Credits.tscn
+@@ -27,10 +27,11 @@
+ [node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer2"]
+ margin_right = 240.0
+ margin_bottom = 330.0
++rect_min_size = Vector2( 240, 300 )
+ size_flags_horizontal = 3
+ size_flags_vertical = 3
+ scroll_horizontal_enabled = false
+-scroll_vertical_enabled = false
++scroll_vertical_enabled = true
+ 
+ [node name="VBoxContainer" type="VBoxContainer" parent="VBoxContainer2/ScrollContainer"]
+ margin_right = 240.0
+@@ -45,17 +46,38 @@
+ text = "Credits"
+ align = 1
+ 
+-[node name="HBoxContainer" type="VBoxContainer" parent="VBoxContainer2/ScrollContainer/VBoxContainer"]
+-margin_top = 21.0
++[node name="MadeByHeader" type="Label" parent="VBoxContainer2/ScrollContainer/VBoxContainer"]
++modulate = Color( 1, 1, 1, 0.576471 )
++margin_top = 11.0
++margin_right = 240.0
++margin_bottom = 22.0
++size_flags_horizontal = 3
++text = "recompiled edition:"
++align = 1
++valign = 1
++autowrap = true
++
++[node name="MadeBy" type="Label" parent="VBoxContainer2/ScrollContainer/VBoxContainer"]
++margin_top = 22.0
+ margin_right = 240.0
+ margin_bottom = 44.0
++size_flags_horizontal = 3
++text = "made by jayden
++with help of ai"
++align = 1
++autowrap = true
++
++[node name="HBoxContainer" type="VBoxContainer" parent="VBoxContainer2/ScrollContainer/VBoxContainer"]
++margin_top = 54.0
++margin_right = 240.0
++margin_bottom = 77.0
+ 
+ [node name="Label2" type="Label" parent="VBoxContainer2/ScrollContainer/VBoxContainer/HBoxContainer"]
+ modulate = Color( 1, 1, 1, 0.576471 )
+ margin_right = 240.0
+ margin_bottom = 11.0
+ size_flags_horizontal = 3
+-text = "design, programming, art, sfx, music:"
++text = "original game - design, programming, art, sfx, music:"
+ align = 1
+ valign = 1
+ autowrap = true
+@@ -63,8 +85,8 @@
+ [node name="Label" type="Label" parent="VBoxContainer2/ScrollContainer/VBoxContainer/HBoxContainer"]
+ margin_top = 12.0
+ margin_right = 240.0
+-margin_bottom = 23.0
+-text = "me"
++margin_bottom = 34.0
++text = "ivy sly"
+ align = 1
+ 
+ [node name="HBoxContainer6" type="VBoxContainer" parent="VBoxContainer2/ScrollContainer/VBoxContainer"]

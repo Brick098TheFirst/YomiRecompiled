@@ -1,0 +1,20 @@
+--- a/ui/ActionSelector/ActionButtons.tscn
++++ b/ui/ActionSelector/ActionButtons.tscn
+@@ -25,7 +25,7 @@
+ mouse_filter = 2
+ size_flags_horizontal = 3
+ size_flags_vertical = 3
+-alignment = 2
++alignment = 1
+ 
+ [node name="Padding" type="Control" parent="TopRow"]
+ margin_right = 20.0
+@@ -102,7 +102,7 @@
+ size_flags_horizontal = 15
+ size_flags_vertical = 13
+ theme = ExtResource( 4 )
+-alignment = 2
++alignment = 1
+ 
+ [node name="PanelContainer" type="PanelContainer" parent="BottomRow"]
+ self_modulate = Color( 1, 1, 1, 0 )

@@ -1,0 +1,16 @@
+--- a/ui/XYPlot/XYPlot.gd
++++ b/ui/XYPlot/XYPlot.gd
+@@ -391,8 +391,11 @@
+ 	if Engine.editor_hint: return
+ 	if not visible: return
+ 
+-	var game = Global.current_game
+-	if is_instance_valid(game):
++	# Global.current_game can point at a match that has just been torn down. A plain null check
++	# is not enough for a freed Object in Godot 3, so go through a weak reference, which returns
++	# null once the instance is gone.
++	var game = weakref(Global.current_game).get_ref()
++	if game != null:
+ 		if was_game_paused and not game.game_paused:
+ 			_on_plot_mouse_exited()
+ 			mouse_clicked = false

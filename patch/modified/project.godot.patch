@@ -1,0 +1,195 @@
+--- a/project.godot
++++ b/project.godot
+@@ -109,7 +109,7 @@
+ "language": "NativeScript",
+ "path": "res://bin/FGCharacter.gdns"
+ }, {
+-"base": "Reference",
++"base": "",
+ "class": "FGObject",
+ "language": "NativeScript",
+ "path": "res://bin/FGObject.gdns"
+@@ -119,7 +119,7 @@
+ "language": "GDScript",
+ "path": "res://characters/BaseChar.gd"
+ }, {
+-"base": "Reference",
++"base": "",
+ "class": "FixedMath",
+ "language": "NativeScript",
+ "path": "res://bin/FixedMath.gdns"
+@@ -185,11 +185,6 @@
+ "path": "res://mechanics/HitboxData.gd"
+ }, {
+ "base": "Node",
+-"class": "HolePunch",
+-"language": "GDScript",
+-"path": "res://addons/Holepunch/holepunch_node.gd"
+-}, {
+-"base": "Node",
+ "class": "HostCommand",
+ "language": "GDScript",
+ "path": "res://characters/CommandAt.gd"
+@@ -214,17 +209,12 @@
+ "language": "GDScript",
+ "path": "res://LimbHurtbox.gd"
+ }, {
+-"base": "Reference",
+-"class": "MultiplayerClient",
+-"language": "GDScript",
+-"path": "res://networking/WebsocketClient.gd"
+-}, {
+ "base": "Fighter",
+ "class": "Mutant",
+ "language": "GDScript",
+ "path": "res://characters/mutant/Beast.gd"
+ }, {
+-"base": "Reference",
++"base": "",
+ "class": "NativeMethods",
+ "language": "NativeScript",
+ "path": "res://bin/NativeMethods.gdns"
+@@ -319,11 +309,6 @@
+ "language": "GDScript",
+ "path": "res://framework/FiniteStateMachine/StateMachine.gd"
+ }, {
+-"base": "Node",
+-"class": "SteamWorkshop",
+-"language": "GDScript",
+-"path": "res://SteamWorkshop.gd"
+-}, {
+ "base": "BaseProjectile",
+ "class": "StickyBomb",
+ "language": "GDScript",
+@@ -360,11 +345,6 @@
+ "path": "res://characters/states/ThrowState.gd"
+ }, {
+ "base": "Node",
+-"class": "UGCItem",
+-"language": "GDScript",
+-"path": "res://UGCItem.gd"
+-}, {
+-"base": "Node",
+ "class": "UsableRequirement",
+ "language": "GDScript",
+ "path": "res://characters/UsableRequirement.gd"
+@@ -440,13 +420,11 @@
+ "HelloWorld": "",
+ "Hitbox": "res://addons/collision_box/hitbox.png",
+ "HitboxData": "",
+-"HolePunch": "",
+ "HostCommand": "",
+ "HurtAerial": "",
+ "HurtGrounded": "",
+ "HurtboxState": "",
+ "LimbHurtbox": "",
+-"MultiplayerClient": "",
+ "Mutant": "",
+ "NativeMethods": "",
+ "NewBullet": "",
+@@ -467,7 +445,6 @@
+ "SettingsSlider": "",
+ "StateInterface": "",
+ "StateMachine": "",
+-"SteamWorkshop": "",
+ "StickyBomb": "",
+ "SuperMove": "",
+ "SweptHitbox": "",
+@@ -475,7 +452,6 @@
+ "TemporalPath": "",
+ "ThrowBox": "res://addons/collision_box/throw_box.png",
+ "ThrowState": "",
+-"UGCItem": "",
+ "UsableRequirement": "",
+ "Utils": "",
+ "VariableSound": "",
+@@ -488,27 +464,30 @@
+ 
+ [application]
+ 
+-config/name="Your Only Move Is HUSTLE"
++config/name="Your Only Move Is RECOMPILED"
+ run/main_scene="res://Main.tscn"
+ config/use_custom_user_dir=true
+-config/custom_user_dir_name="YourOnlyMoveIsHUSTLE"
++config/custom_user_dir_name="YourOnlyMoveIsRECOMPILED"
+ boot_splash/image="res://splash.png"
+ boot_splash/use_filter=false
+ boot_splash/bg_color=Color( 0, 0, 0, 1 )
+ config/icon="res://icon2.png"
+ 
++[audio]
++
++buses/default_bus_layout="res://default_bus_layout.tres"
++
+ [autoload]
+ 
+-Steam="*res://SteamStub.gd"
+ Global="*res://Global.gd"
+-SteamHustle="*res://SteamY.gd"
++OfflineCapabilities="*res://offline_compat/Capabilities.gd"
+ ReplayManager="*res://ReplayManager.gd"
+-Network="*res://cl_port/Network.gd"
++Network="*res://offline_compat/LocalMatchState.gd"
+ ModLoader="*res://modloader/ModLoader.gd"
+-SteamLobby="*res://cl_port/SteamLobby.gd"
+ Custom="*res://Custom.gd"
+ Hotkeys="*res://Hotkeys.gd"
+ ModOverride="*res://ModOverride.gd"
++Gamepad="*res://Gamepad.gd"
+ 
+ [debug]
+ 
+@@ -531,7 +510,7 @@
+ 
+ [editor_plugins]
+ 
+-enabled=PoolStringArray( "res://addons/collision_box/plugin.cfg", "res://addons/export_categories/plugin.cfg", "res://addons/helpers/plugin.cfg", "res://addons/limb_finder/plugin.cfg", "res://addons/multirun/plugin.cfg" )
++enabled=PoolStringArray( "res://addons/export_categories/plugin.cfg", "res://addons/multirun/plugin.cfg" )
+ 
+ [global]
+ 
+@@ -572,20 +551,27 @@
+ "deadzone": 0.5,
+ "events": [ Object(InputEventJoypadButton,"resource_local_to_scene":false,"resource_name":"","device":0,"button_index":0,"pressure":0.0,"pressed":false,"script":null)
+ , Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":0,"alt":false,"shift":false,"control":false,"meta":false,"command":false,"pressed":false,"scancode":0,"physical_scancode":16777222,"unicode":0,"echo":false,"script":null)
++, Object(InputEventJoypadButton,"resource_local_to_scene":false,"resource_name":"","device":0,"button_index":0,"pressure":0.0,"pressed":false,"script":null)
+  ]
+ }
+ ui_focus_next={
+ "deadzone": 0.5,
+ "events": [ Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":0,"alt":false,"shift":false,"control":false,"meta":false,"command":false,"pressed":false,"scancode":16777218,"physical_scancode":0,"unicode":0,"echo":false,"script":null)
++, Object(InputEventJoypadButton,"resource_local_to_scene":false,"resource_name":"","device":0,"button_index":5,"pressure":0.0,"pressed":false,"script":null)
++, Object(InputEventJoypadButton,"resource_local_to_scene":false,"resource_name":"","device":0,"button_index":13,"pressure":0.0,"pressed":false,"script":null)
+  ]
+ }
+ ui_focus_prev={
+ "deadzone": 0.5,
+-"events": [  ]
++"events": [ Object(InputEventJoypadButton,"resource_local_to_scene":false,"resource_name":"","device":0,"button_index":4,"pressure":0.0,"pressed":false,"script":null)
++, Object(InputEventJoypadButton,"resource_local_to_scene":false,"resource_name":"","device":0,"button_index":12,"pressure":0.0,"pressed":false,"script":null)
++ ]
+ }
+ playback={
+ "deadzone": 0.5,
+ "events": [ Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":0,"alt":false,"shift":false,"control":false,"meta":false,"command":false,"pressed":false,"scancode":82,"physical_scancode":0,"unicode":0,"echo":false,"script":null)
++, Object(InputEventJoypadButton,"resource_local_to_scene":false,"resource_name":"","device":0,"button_index":4,"pressure":0.0,"pressed":false,"script":null)
++, Object(InputEventJoypadButton,"resource_local_to_scene":false,"resource_name":"","device":0,"button_index":12,"pressure":0.0,"pressed":false,"script":null)
+  ]
+ }
+ frame_advance={
+@@ -596,11 +582,14 @@
+ submit_action={
+ "deadzone": 0.5,
+ "events": [ Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":0,"alt":false,"shift":false,"control":false,"meta":false,"command":false,"pressed":false,"scancode":0,"physical_scancode":32,"unicode":0,"echo":false,"script":null)
++, Object(InputEventJoypadButton,"resource_local_to_scene":false,"resource_name":"","device":0,"button_index":0,"pressure":0.0,"pressed":false,"script":null)
++, Object(InputEventJoypadButton,"resource_local_to_scene":false,"resource_name":"","device":0,"button_index":2,"pressure":0.0,"pressed":false,"script":null)
+  ]
+ }
+ pause={
+ "deadzone": 0.5,
+ "events": [ Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":0,"alt":false,"shift":false,"control":false,"meta":false,"command":false,"pressed":false,"scancode":0,"physical_scancode":16777217,"unicode":0,"echo":false,"script":null)
++, Object(InputEventJoypadButton,"resource_local_to_scene":false,"resource_name":"","device":0,"button_index":11,"pressure":0.0,"pressed":false,"script":null)
+  ]
+ }
+ edit_replay={

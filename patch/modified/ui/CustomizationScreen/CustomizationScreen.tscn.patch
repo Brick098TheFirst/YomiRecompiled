@@ -1,0 +1,50 @@
+--- a/ui/CustomizationScreen/CustomizationScreen.tscn
++++ b/ui/CustomizationScreen/CustomizationScreen.tscn
+@@ -65,21 +65,6 @@
+ size_flags_horizontal = 3
+ clip_text = true
+ 
+-[node name="WorkshopButton" type="Button" parent="HBoxContainer"]
+-unique_name_in_owner = true
+-margin_left = 394.0
+-margin_right = 492.0
+-margin_bottom = 13.0
+-disabled = true
+-text = "upload to workshop"
+-
+-[node name="WorkshopButton2" type="Button" parent="HBoxContainer"]
+-unique_name_in_owner = true
+-margin_left = 493.0
+-margin_right = 566.0
+-margin_bottom = 13.0
+-text = "visit workshop"
+-
+ [node name="OpenFolderButton" type="Button" parent="HBoxContainer"]
+ unique_name_in_owner = true
+ margin_left = 567.0
+@@ -479,17 +464,6 @@
+ margin_bottom = 40.0
+ mouse_filter = 2
+ 
+-[node name="WorkshopUpdatedLabel" type="RichTextLabel" parent="."]
+-unique_name_in_owner = true
+-visible = false
+-modulate = Color( 0.113725, 0.552941, 0.960784, 1 )
+-margin_left = 354.0
+-margin_top = 22.0
+-margin_right = 497.0
+-margin_bottom = 38.0
+-text = "style uploaded to workshop"
+-scroll_active = false
+-
+ [node name="AllowSaveButton" type="CheckButton" parent="."]
+ unique_name_in_owner = true
+ margin_left = 216.0
+@@ -504,7 +478,4 @@
+ 
+ [connection signal="text_changed" from="HBoxContainer/StyleName" to="." method="_on_StyleName_text_changed"]
+ [connection signal="text_entered" from="HBoxContainer/StyleName" to="." method="_on_StyleName_text_entered"]
+-[connection signal="pressed" from="HBoxContainer/WorkshopButton" to="." method="_on_WorkshopButton_pressed"]
+-[connection signal="pressed" from="HBoxContainer/WorkshopButton2" to="." method="_on_WorkshopButton2_pressed"]
+ [connection signal="pressed" from="HBoxContainer/OpenFolderButton" to="." method="_on_OpenFolderButton_pressed"]
+-[connection signal="meta_clicked" from="WorkshopUpdatedLabel" to="." method="_on_WorkshopUpdatedLabel_meta_clicked"]

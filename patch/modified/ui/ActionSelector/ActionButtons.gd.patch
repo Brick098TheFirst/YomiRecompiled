@@ -1,0 +1,72 @@
+--- a/ui/ActionSelector/ActionButtons.gd
++++ b/ui/ActionSelector/ActionButtons.gd
+@@ -77,6 +77,10 @@
+ 		$"%TopRow".alignment = BoxContainer.ALIGN_BEGIN
+ 		$"%TopRowDataContainer".grow_horizontal = Control.GROW_DIRECTION_BEGIN
+ 	$"%AutoButton".hint_tooltip = "Skips your turn when no actions are available."
++	# Offline-recovery: the bar is drawn twice, once per side, each hugging its own half. When
++	# only one side is on screen (versus CPU) that half is the whole screen, so the bar has to
++	# move to the middle instead of sitting against the edge it would have shared.
++	_solo_tuned = false
+ 
+ 	$"%DI".hint_tooltip = "Adjusts the angle and speed you are knocked back next time you are hit."
+ 	$"%DI".connect("data_changed", self, "send_ui_action")
+@@ -153,7 +157,11 @@
+ 			_on_submit_pressed()
+ 
+ func _physics_process(delta):
+-	if is_instance_valid(game):
++	# A match can be torn down while this node is still alive for a frame. is_instance_valid()
++	# is not enough on its own: a freed instance still passes a plain truthiness check from
++	# GDScript, which is how "Invalid get index 'game_paused' on a previously freed instance"
++	# gets into the log. Compare against null explicitly.
++	if game != null:
+ 		if not game.game_paused:
+ 			visible = false
+ 
+@@ -196,6 +204,26 @@
+ 	if has_node("%SelectButton"):
+ 		$"%SelectButton".shortcut = _select_button_shortcut
+ 
++var _solo_tuned = false
++
++
++# true  - this panel is alone on screen: centre its rows.
++# false - the usual two-panel layout, mirrored so each bar hugs the middle of the screen.
++func set_solo_layout(solo):
++	if solo == _solo_tuned:
++		return
++	_solo_tuned = solo
++	if solo:
++		$"%BottomRow".alignment = BoxContainer.ALIGN_CENTER
++		$"%TopRow".alignment = BoxContainer.ALIGN_CENTER
++	elif player_id == 1:
++		$"%BottomRow".alignment = BoxContainer.ALIGN_END
++		$"%TopRow".alignment = BoxContainer.ALIGN_END
++	else:
++		$"%BottomRow".alignment = BoxContainer.ALIGN_BEGIN
++		$"%TopRow".alignment = BoxContainer.ALIGN_BEGIN
++
++
+ func _on_hotkey_binding_changed(action: String):
+ 	if action == Hotkeys.LOCK_IN:
+ 		_rebuild_select_button_shortcut()
+@@ -530,9 +558,6 @@
+ 
+ 
+ 	emit_signal("action_selected", action, data, extra)
+-	if not SteamLobby.SPECTATING:
+-		if Network.player_id == player_id:
+-			Network.submit_action(action, data, extra)
+ 	
+ 
+ 
+@@ -751,7 +776,7 @@
+ 		$"%UndoButton".set_disabled(true)
+ 	else:
+ 		$"%UndoButton".set_disabled(false)
+-	if Network.multiplayer_active or SteamLobby.SPECTATING:
++	if Network.multiplayer_active or false:
+ 		$"%UndoButton".hide()
+ 
+ 	$"%ReverseButton".set_disabled(true)

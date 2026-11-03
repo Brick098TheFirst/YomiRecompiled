@@ -1,0 +1,53 @@
+# Build output: patched copies, unpacked game files, logs.
+build/
+*.pck
+*.pck.tmp
+
+# Generated patched files. Regenerate with `python3 tools/build_patch.py`.
+# The diffs are what belong in git; their output is rebuilt on the user's machine against the
+# copy of the game they own. `**/` so nested folders are covered too — a patched `ui/CSS/*.gd`
+# left in a commit would be a copy of the game.
+patch/modified/**/*.gd
+patch/modified/**/*.tscn
+patch/modified/**/*.godot
+patch/modified/**/*.import
+# this project's own files, which do belong in git
+!patch/modified/ai/**
+!patch/modified/offline_compat/**
+!patch/modified/Gamepad.gd
+
+# Local-only art and music: this project's edits of the game's assets. They are in this repository
+# on purpose (LEGAL.md explains the position), so nothing here is ignored — except the .import
+# caches of anything else.
+
+# No game files, ever.
+*.stex
+*.ctex
+*.oggstr
+*.mp3str
+*.tpz
+data.pck
+YourOnlyMoveIsHUSTLE
+YourOnlyMoveIsHUSTLE.exe
+# ...except this project's own declared art and music and the import caches they need. A swapped
+# .png without its matching .stex is a picture nobody sees, so both are committed on purpose; the
+# .import caches of any other file stay out.
+!localspot/**/*.stex
+!localspot/**/*.md5
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+
+# Upstream originals: never committed. The diffs carry their own context and are applied to the
+# user's own copy of the game instead. See LEGAL.md.
+patch/original/

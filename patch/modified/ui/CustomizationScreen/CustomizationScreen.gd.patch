@@ -1,0 +1,122 @@
+--- a/ui/CustomizationScreen/CustomizationScreen.gd
++++ b/ui/CustomizationScreen/CustomizationScreen.gd
+@@ -298,8 +298,6 @@
+ 		$"%AllowSaveButton".hide()
+ 	else:
+ 		$"%AllowSaveButton".set_pressed_no_signal(Global.allow_save_default)
+-	if not SteamHustle.WORKSHOP_ENABLED:
+-		$"%WorkshopButton".disabled = true
+ 	_on_character_button_pressed(buttons[0])
+ 	_on_reset_color_pressed()
+ 	update_warning()
+@@ -356,10 +354,6 @@
+ 	var data = get_style_data()
+ 	Custom.save_style(data)
+ 	_refresh_style_credits_button()
+-	SteamHustle.unlock_achievement("ACH_STYLISH")
+-	if data.character_color == Color("0b0c0f"):
+-		if not data.use_outline or data.outline_color == Color("0b0c0f"):
+-			SteamHustle.unlock_achievement("ACH_SNEAKY")
+ 	$"%LoadStyleButton".update_styles()
+ 	if clear_text:
+ 		$"%StyleName".clear()
+@@ -515,7 +509,6 @@
+ 				if child.text == hs:
+ 					child.pressed = true
+ 					select_hitspark(hs)
+-	$"%WorkshopButton".disabled = false
+ 
+ func select_hitspark(hitspark_name):
+ 	if selected_hitspark != hitspark_name:
+@@ -1049,71 +1042,10 @@
+ 	OS.shell_open(ProjectSettings.globalize_path("user://custom"))
+ 	pass
+ 
+-func _on_DLCWarning_meta_clicked(meta):
+-	Steam.activateGameOverlayToStore(SteamHustle.APP_ID)
+-	pass
+-
+-func _on_WorkshopButton_pressed():
+-	
+-	
+-	
+-	if Global.STYLE_SAVE_FEATURE_ENABLED:
+-		$"%AllowSaveButton".set_pressed_no_signal(true)
+-	save_style(false)
+-	var item = UGCItem.new()
+-	item.connect("item_created", self, "_on_item_created")
+-	item.connect("item_updated", self, "_on_item_updated")
+-	$"%WorkshopButton".disabled = true
+-	var image: Image = get_viewport().get_texture().get_data()
+-	image.flip_y()
+-	var rect = Rect2(Vector2(357, 119), Vector2(70, 70))
+-
+-	image = image.get_rect(rect)
+-	image.resize(image.get_width() * 6, image.get_height() * 6, 0)
+-	workshop_preview_image = image
+-
+-func _on_item_created(p_file_id):
+-	var data = get_style_data()
+-	data["workshop_id"] = p_file_id
+-	
+-	var folder_path = Custom.save_style_workshop(data)
+-	
+-	var item = UGCItem.new(p_file_id)
+-	item.set_tags(["Style"])
+-	item.set_title($"%StyleName".text)
+-	item.set_content(ProjectSettings.globalize_path(folder_path))
+-	item.set_visibility(0)
+-
+-	workshop_preview_image.save_png(ProjectSettings.globalize_path(folder_path) + "/preview.png")
+-
+-	item.set_preview(ProjectSettings.globalize_path(folder_path) + "/preview.png")
+-	item.update("new style")
+-
+-func _on_item_updated(url):
+-	$"%WorkshopUpdatedLabel".clear()
+-	$"%WorkshopUpdatedLabel".append_bbcode("[u][url=%s]style uploaded to workshop[/url]" % url)
+-	$"%WorkshopUpdatedLabel".show()
+-
+ func _on_StyleName_text_changed(new_text: String):
+-	$"%WorkshopButton".disabled = new_text.strip_edges() == ""
+-	$"%WorkshopUpdatedLabel".hide()
+ 	_populate_style_credits()
+ 
+ 
+-func _on_WorkshopUpdatedLabel_meta_clicked(meta):
+-	OS.shell_open(meta)
+-	pass
+-
+-
+-func _on_WorkshopButton2_pressed():
+-
+-	Steam.activateGameOverlayToWebPage("https://steamcommunity.com/app/2212330/workshop/")
+-	pass
+-
+-
+-
+-
+-
+ func _set_label_with_ellipsis(label: Label, text: String):
+ 	label.clip_text = true
+ 	var font = label.get_font("font")
+@@ -1129,10 +1061,6 @@
+ 	label.text = truncated + ellipsis
+ 
+ func _current_username() -> String:
+-	if SteamHustle.STARTED and SteamHustle.STEAM_ID:
+-		var steam_name = Steam.getFriendPersonaName(SteamHustle.STEAM_ID)
+-		if steam_name is String and steam_name != "":
+-			return steam_name
+ 	var pd = Global.get_player_data()
+ 	if pd is Dictionary:
+ 		var u = pd.get("username", "")
+@@ -1143,7 +1071,7 @@
+ 
+ 
+ func _current_steam_id() -> String:
+-	var sid = SteamHustle.STEAM_ID
++	var sid = OfflineCapabilities.STEAM_ID
+ 	if sid != null and typeof(sid) == TYPE_INT and sid > 0:
+ 		return str(sid)
+ 	return ""

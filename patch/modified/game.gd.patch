@@ -1,0 +1,49 @@
+--- a/game.gd
++++ b/game.gd
+@@ -233,10 +233,14 @@
+ 	game.p1.hp = p1.hp
+ 	game.p2.hp = p2.hp
+ 	clean_objects()
++	# Only free what is still alive: a previous copy_to() can leave entries pointing at objects
++	# that have already been freed, and calling free() on those throws.
+ 	for object in game.objects:
+-		object.free()
++		if is_instance_valid(object) and not object.is_queued_for_deletion():
++			object.free()
+ 	for fx in game.effects:
+-		fx.free()
++		if is_instance_valid(fx) and not fx.is_queued_for_deletion():
++			fx.free()
+ 	
+ 	
+ 	game.objs_spawned_count = objs_spawned_count
+@@ -568,9 +572,6 @@
+ 	if ReplayManager.playback and not ReplayManager.resimulating and not is_ghost:
+ 		yield(get_tree().create_timer(0.5 if not ReplayManager.replaying_ingame else 0.25), "timeout")
+ 	game_started = true
+-	if not is_ghost:
+-		if SteamLobby.is_fighting():
+-			SteamLobby.on_match_started()
+ 
+ 	if match_data.has("asymmetrical_health_meter") and match_data.asymmetrical_health_meter:
+ 		if match_data.has("p1_starting_meter"):
+@@ -1366,9 +1367,6 @@
+ 		Network.replay_saved = true
+ 
+ 	if not is_ghost:
+-		if not ReplayManager.playback and not ReplayManager.replaying_ingame and not is_in_replay:
+-			if not Network.multiplayer_active and not SteamLobby.SPECTATING:
+-				SteamHustle.unlock_achievement("ACH_CHESS")
+ 		ReplayManager.play_full = true
+ 	var winner = 0
+ 	if p2.hp > p1.hp:
+@@ -1379,9 +1377,6 @@
+ 	var loser = 1
+ 	if winner == 1:
+ 		loser = 2
+-	if get_player(loser).had_sadness:
+-		if Network.multiplayer_active and winner == Network.player_id:
+-			SteamHustle.unlock_achievement("ACH_WIN_VS_SADNESS")
+ 	
+ 	emit_signal("game_ended")
+ 

@@ -1,0 +1,18 @@
+--- a/Custom.gd
++++ b/Custom.gd
+@@ -311,15 +311,6 @@
+ 
+ 	Global.add_dir_contents(dir, files, _directories, false, ".style")
+ 
+-	if SteamHustle.STARTED and SteamHustle.WORKSHOP_ENABLED:
+-		var workshop = SteamWorkshop.new()
+-		for item in Steam.getSubscribedItems():
+-			var info: Dictionary
+-			info = workshop.get_item_install_info(item)
+-			if info.ret:
+-				dir.open(info.folder)
+-				dir.list_dir_begin(false, true)
+-				Global.add_dir_contents(dir, files, _directories, false, ".style")
+ 	
+ 	files.sort_custom(self, "sort_styles")
+ 

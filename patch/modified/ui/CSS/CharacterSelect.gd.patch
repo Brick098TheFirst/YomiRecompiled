@@ -1,0 +1,210 @@
+--- a/ui/CSS/CharacterSelect.gd
++++ b/ui/CSS/CharacterSelect.gd
+@@ -95,8 +95,6 @@
+ 	$"%GoButton".connect("pressed", self, "go")
+ 
+ 	$"%QuitButton".connect("pressed", self, "quit")
+-	Network.connect("character_selected", self, "_on_network_character_selected")
+-	Network.connect("match_locked_in", self, "_on_network_match_locked_in")
+ 	var dir = Directory.new()
+ 
+ 	searchBar = load("res://cl_port/searchbar.tscn").instance()
+@@ -137,8 +135,6 @@
+ 	
+ 	loaded_mods = true
+ 	yield(get_tree(), "idle_frame")
+-	net_updateModLists()
+-	yield(get_tree(), "idle_frame")
+ 	Global.mods_loaded = true
+ 	bttContainer.show()
+ 	go_button.show()
+@@ -194,25 +190,6 @@
+ 	loadThread2.wait_to_finish()
+ 	pass
+ 
+-func _on_network_character_selected(player_id, character, style = null):
+-	selected_characters[player_id] = character
+-	selected_styles[player_id] = style
+-	if Network.is_host() and player_id == Network.player_id:
+-		$"%GameSettingsPanelContainer".hide()
+-	if selected_characters[1] != null and selected_characters[2] != null:
+-
+-		if Network.is_host():
+-			Network.rpc_("send_match_data", get_match_data())
+-
+-func _on_network_match_locked_in(match_data):
+-	network_match_data = match_data
+-	if SteamLobby.LOBBY_ID != 0 and SteamLobby.OPPONENT_ID != 0:
+-		Steam.setLobbyMemberData(SteamLobby.LOBBY_ID, "character", match_data.selected_characters[SteamLobby.PLAYER_SIDE].name)
+-	if (loadThread != null):
+-		loadThread.wait_to_finish()
+-	loadThread = Thread.new()
+-	loadThread.start(self, "net_async_loadOtherChar")
+-
+ func reset():
+ 	hide()
+ 
+@@ -394,10 +371,6 @@
+ 		button.set_pressed_no_signal(false)
+ 
+ func quit():
+-	if Network.multiplayer_active:
+-		Network.stop_multiplayer()
+-
+-	SteamLobby.quit_match()
+ 	Global.reload()
+ 
+ func get_match_data():
+@@ -416,10 +389,7 @@
+ 		randomize()
+ 		data.merge({"seed": randi()})
+ 	
+-	if SteamLobby.LOBBY_ID != 0 and SteamLobby.MATCH_SETTINGS:
+-		data.merge(SteamLobby.MATCH_SETTINGS)
+-	else:
+-		data.merge($"%GameSettingsPanelContainer".get_data())
++	data.merge($"%GameSettingsPanelContainer".get_data())
+ 	return data
+ 
+ func go():
+@@ -465,21 +435,6 @@
+ 		btt_disableTimer -= delta * 60
+ 		btt_disableTimer = max(btt_disableTimer, 0)
+ 
+-	for j in len(btts):
+-		var b = btts[j]
+-		if ( not b.is_visible()):
+-			continue
+-
+-		
+-		if ( not net_isCharacterAvailable(b.name)):
+-			b.disabled = true
+-
+-	var connected = SteamLobby.connected()
+-	for j in len(btts):
+-		var b = btts[j]
+-		if isCustomChar(b.name):
+-			b.visible = (connected and SteamLobby.LOBBY_CHARLOADER_ENABLED) or not connected
+-			
+ 
+ 	searchBar.visible = $ScrollContainer.get_v_scrollbar().is_visible_in_tree()
+ 
+@@ -487,9 +442,6 @@
+ 	$"%QuitButton".disabled = currentlyLoading
+ 
+ 	
+-	if not updatedNetworkLists:
+-		net_updateModLists()
+-		updatedNetworkLists = true
+ 
+ 	
+ 	loadingLabel.text = loadingText
+@@ -505,15 +457,8 @@
+ 				retract_loaded = false
+ 				loadingLabel.percent_visible = 0
+ 	
+-	if _Global.isSteamGame:
+-		Network.multiplayer_host = Network.steam_isHost
+ 
+ 	
+-	if (buffer_go):
+-		if loadThread != null:
+-			loadThread.wait_to_finish()
+-		buffer_go = false
+-		go()
+ 
+ 
+ func _input(event):
+@@ -750,8 +695,6 @@
+ 			button.disabled = true
+ 		if singleplayer:
+ 			$"%GoButton".disabled = false
+-	if not singleplayer:
+-		Network.select_character(data, $"%P1Display".selected_style if current_player == 1 else $"%P2Display".selected_style)
+ 
+ 
+ func createButtons():
+@@ -863,45 +806,6 @@
+ 
+ 
+ var enable_online_go = false
+-func net_async_loadOtherChar():
+-	print("there should be 2 of these")
+-	for c in selected_characters.values():
+-		if (c != null):
+-			if (isCustomChar(c.name)):
+-				loadListChar(name_to_index[c.name], true)
+-				loadingText = "Character Loaded"
+-				loadingLabel_vanish()
+-				currentlyLoading = false
+-
+-	if not Network.multiplayer_host:
+-		net_sendPacket("go_button_activate")
+-		
+-	else:
+-		$"%GoButton".show()
+-		$"%GoButton".connect("pressed", self, "net_startMatch")
+-		if enable_online_go:
+-			$"%GoButton".disabled = false
+-			enable_online_go = false
+-
+-func net_startMatch():
+-	buffer_go = true
+-	net_sendPacket("go_button_pressed")
+-	
+-
+-func net_updateModLists():
+-	Network.normal_mods = []
+-	Network.char_mods = []
+-
+-	var i = 0
+-	for mod in ModLoader.active_mods:
+-		if hash_to_folder[mod[0]] in ModLoader.charFolders:
+-			Network.char_mods.append(mod[0])
+-		else:
+-			if (mod[0] in serverMods):
+-				Network.normal_mods.append(mod[0])
+-		i += 1
+-
+-
+ func net_loadReplayChars(_replayChars):
+ 	var rc = _replayChars
+ 	if rc != []:
+@@ -910,37 +814,6 @@
+ 		if (isCustomChar(rc[1])):
+ 			loadListChar(name_to_index[retro_charName(rc[1])])
+ 
+-func net_isCharacterAvailable(_charName):
+-	var custom = isCustomChar(_charName)
+-	if custom and not SteamLobby.LOBBY_CHARLOADER_ENABLED and SteamLobby.LOBBY_ID != 0:
+-		return false
+-	if ( not singleplayer and custom and (Network.player1_chars != [] or Network.player2_chars != [])):
+-		var foundIt1 = false
+-		var foundIt2 = false
+-		for m in Network.player1_chars:
+-			if (hash_to_folder.has(m)):
+-				if (name_to_folder[_charName] == hash_to_folder[m]):
+-					foundIt1 = true
+-					break
+-		for m in Network.player2_chars:
+-			if (hash_to_folder.has(m)):
+-				if (name_to_folder[_charName] == hash_to_folder[m]):
+-					foundIt2 = true
+-					break
+-		if ( not foundIt1 or not foundIt2):
+-			return false
+-	return true
+-
+-func net_sendPacket(name):
+-	if (_Global.isSteamGame):
+-		var fullData = {"_packetName": name}
+-		SteamLobby._send_P2P_Packet(SteamLobby.OPPONENT_ID, fullData)
+-	else:
+-		Network.rpc_(name)
+-
+-
+-
+-
+ func writeHex(_file, _hexList = [], _bits = 64):
+ 	for h in _hexList:
+ 		if _bits == 8:

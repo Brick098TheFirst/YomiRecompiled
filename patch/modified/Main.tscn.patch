@@ -1,0 +1,557 @@
+--- a/Main.tscn
++++ b/Main.tscn
+@@ -1,12 +1,10 @@
+-[gd_scene load_steps=95 format=2]
++[gd_scene load_steps=88 format=2]
+ 
+ [ext_resource path="res://ui/UILayer.gd" type="Script" id=1]
+ [ext_resource path="res://main.gd" type="Script" id=2]
+ [ext_resource path="res://ui/ActionSelector/ActionButtons.tscn" type="PackedScene" id=3]
+ [ext_resource path="res://theme.tres" type="Theme" id=4]
+-[ext_resource path="res://ui/Lobby.tscn" type="PackedScene" id=5]
+ [ext_resource path="res://ui/MainMenu.gd" type="Script" id=6]
+-[ext_resource path="res://ui/NetworkDebugLabel.gd" type="Script" id=7]
+ [ext_resource path="res://ui/HUD/HudLayer.gd" type="Script" id=8]
+ [ext_resource path="res://ui/HUD/BurstMeter.gd" type="Script" id=9]
+ [ext_resource path="res://ui/super_bar_small3.png" type="Texture" id=10]
+@@ -29,7 +27,6 @@
+ [ext_resource path="res://ui/healthbar_p2_4.png" type="Texture" id=27]
+ [ext_resource path="res://ui/burst2.png" type="Texture" id=28]
+ [ext_resource path="res://ui/burst4.png" type="Texture" id=29]
+-[ext_resource path="res://ui/Chat/Chat.tscn" type="PackedScene" id=30]
+ [ext_resource path="res://ui/super_bar2.png" type="Texture" id=31]
+ [ext_resource path="res://ui/super_bar3.png" type="Texture" id=32]
+ [ext_resource path="res://ui/super_bar_p2_2.png" type="Texture" id=33]
+@@ -54,10 +51,7 @@
+ [ext_resource path="res://ui/itch.png" type="Texture" id=52]
+ [ext_resource path="res://OptionsContainer.gd" type="Script" id=53]
+ [ext_resource path="res://ui/ReplayControls.tscn" type="PackedScene" id=54]
+-[ext_resource path="res://ui/ResimRequestScreen.gd" type="Script" id=55]
+ [ext_resource path="res://modloader/MLMainHook.gd" type="Script" id=56]
+-[ext_resource path="res://ui/SteamLobby/SteamLobbyList.tscn" type="PackedScene" id=57]
+-[ext_resource path="res://ui/SteamLobby/SteamLobby.tscn" type="PackedScene" id=58]
+ [ext_resource path="res://ui/BgCircle.gd" type="Script" id=59]
+ [ext_resource path="res://ui/NagWindow2.tscn" type="PackedScene" id=60]
+ [ext_resource path="res://ui/HelpText.tscn" type="PackedScene" id=61]
+@@ -67,7 +61,6 @@
+ [ext_resource path="res://ui/help_button.png" type="Texture" id=65]
+ [ext_resource path="res://ui/ghostsettingsdown.png" type="Texture" id=66]
+ [ext_resource path="res://ui/Credits.tscn" type="PackedScene" id=67]
+-[ext_resource path="res://modloader/workshop_uploader/ModUploader.tscn" type="PackedScene" id=68]
+ [ext_resource path="res://ui/PixeloidSans-Bold.ttf" type="DynamicFontData" id=69]
+ [ext_resource path="res://ui/super_bar_small2.png" type="Texture" id=70]
+ [ext_resource path="res://DebugContainer.gd" type="Script" id=71]
+@@ -80,7 +73,6 @@
+ [ext_resource path="res://HotkeysTab.gd" type="Script" id=78]
+ [ext_resource path="res://ui/steed.png" type="Texture" id=79]
+ [ext_resource path="res://ui/Window/Window.gd" type="Script" id=201]
+-[ext_resource path="res://ui/CommunityEvents.gd" type="Script" id=202]
+ [ext_resource path="res://MainHooks.gd" type="Script" id=203]
+ 
+ [sub_resource type="ShaderMaterial" id=19]
+@@ -1684,15 +1676,6 @@
+ size_flags_vertical = 0
+ text = "quit"
+ 
+-[node name="ForfeitButton" type="Button" parent="UILayer/GameUI/PausePanel/VBoxContainer"]
+-unique_name_in_owner = true
+-visible = false
+-margin_top = 64.0
+-margin_right = 139.0
+-margin_bottom = 76.0
+-size_flags_vertical = 0
+-text = "forfeit"
+-
+ [node name="Control" type="Control" parent="UILayer/GameUI/PausePanel/VBoxContainer"]
+ margin_top = 64.0
+ margin_right = 139.0
+@@ -2072,14 +2055,6 @@
+ flat = true
+ icon_align = 1
+ 
+-[node name="ChatWindow" parent="UILayer" instance=ExtResource( 30 )]
+-unique_name_in_owner = true
+-visible = false
+-margin_left = 176.0
+-margin_top = -104.0
+-margin_right = 320.0
+-margin_bottom = 23.0
+-
+ [node name="MainMenu" type="Control" parent="UILayer"]
+ unique_name_in_owner = true
+ anchor_right = 1.0
+@@ -2098,9 +2073,9 @@
+ anchor_right = 0.5
+ anchor_bottom = 0.5
+ margin_left = -45.0
+-margin_top = -66.0
++margin_top = -76.0
+ margin_right = 51.0
+-margin_bottom = 114.0
++margin_bottom = 124.0
+ grow_horizontal = 2
+ custom_constants/separation = 0
+ alignment = 1
+@@ -2115,7 +2090,7 @@
+ text = "Singleplayer"
+ flat = true
+ 
+-[node name="SteamMultiplayerButton" type="Button" parent="UILayer/MainMenu/ButtonContainer"]
++[node name="MultiplayerButton" type="Button" parent="UILayer/MainMenu/ButtonContainer"]
+ unique_name_in_owner = true
+ margin_top = 20.0
+ margin_right = 102.0
+@@ -2123,54 +2098,21 @@
+ rect_min_size = Vector2( 0, 20 )
+ mouse_default_cursor_shape = 2
+ custom_colors/font_color_hover = Color( 1, 0.2, 0.239216, 1 )
+-text = "Multiplayer (Steam)"
+-flat = true
+-
+-[node name="MultiplayerButton" type="Button" parent="UILayer/MainMenu/ButtonContainer"]
+-unique_name_in_owner = true
+-margin_top = 40.0
+-margin_right = 102.0
+-margin_bottom = 60.0
+-rect_min_size = Vector2( 0, 20 )
+-mouse_default_cursor_shape = 2
+-custom_colors/font_color_hover = Color( 1, 0.2, 0.239216, 1 )
+-text = "Multiplayer (Legacy)"
+-flat = true
+-
+-[node name="DirectConnectButton" type="Button" parent="UILayer/MainMenu/ButtonContainer"]
+-unique_name_in_owner = true
+-margin_top = 60.0
+-margin_right = 102.0
+-margin_bottom = 80.0
+-rect_min_size = Vector2( 0, 20 )
+-mouse_default_cursor_shape = 2
+-custom_colors/font_color_hover = Color( 1, 0.2, 0.239216, 1 )
+-text = "Direct Connect"
++text = "Multiplayer"
+ flat = true
+ 
+ [node name="CustomizeButton" type="Button" parent="UILayer/MainMenu/ButtonContainer"]
+ unique_name_in_owner = true
+-margin_top = 80.0
+-margin_right = 102.0
+-margin_bottom = 100.0
+-rect_min_size = Vector2( 0, 20 )
+-mouse_default_cursor_shape = 2
+-custom_colors/font_color_hover = Color( 1, 0.2, 0.239216, 1 )
+-text = "Customize"
+-flat = true
+-
+-[node name="ReplayButton" type="Button" parent="UILayer/MainMenu/ButtonContainer"]
+-unique_name_in_owner = true
+ margin_top = 100.0
+ margin_right = 102.0
+ margin_bottom = 120.0
+ rect_min_size = Vector2( 0, 20 )
+ mouse_default_cursor_shape = 2
+ custom_colors/font_color_hover = Color( 1, 0.2, 0.239216, 1 )
+-text = "Replays"
++text = "Customize"
+ flat = true
+ 
+-[node name="OptionsButton" type="Button" parent="UILayer/MainMenu/ButtonContainer"]
++[node name="ReplayButton" type="Button" parent="UILayer/MainMenu/ButtonContainer"]
+ unique_name_in_owner = true
+ margin_top = 120.0
+ margin_right = 102.0
+@@ -2178,10 +2120,10 @@
+ rect_min_size = Vector2( 0, 20 )
+ mouse_default_cursor_shape = 2
+ custom_colors/font_color_hover = Color( 1, 0.2, 0.239216, 1 )
+-text = "Options"
++text = "Replays"
+ flat = true
+ 
+-[node name="CreditsButton" type="Button" parent="UILayer/MainMenu/ButtonContainer"]
++[node name="OptionsButton" type="Button" parent="UILayer/MainMenu/ButtonContainer"]
+ unique_name_in_owner = true
+ margin_top = 140.0
+ margin_right = 102.0
+@@ -2189,10 +2131,10 @@
+ rect_min_size = Vector2( 0, 20 )
+ mouse_default_cursor_shape = 2
+ custom_colors/font_color_hover = Color( 1, 0.2, 0.239216, 1 )
+-text = "Credits"
++text = "Options"
+ flat = true
+ 
+-[node name="QuitProgramButton" type="Button" parent="UILayer/MainMenu/ButtonContainer"]
++[node name="CreditsButton" type="Button" parent="UILayer/MainMenu/ButtonContainer"]
+ unique_name_in_owner = true
+ margin_top = 160.0
+ margin_right = 102.0
+@@ -2200,19 +2142,18 @@
+ rect_min_size = Vector2( 0, 20 )
+ mouse_default_cursor_shape = 2
+ custom_colors/font_color_hover = Color( 1, 0.2, 0.239216, 1 )
+-text = "Quit"
++text = "Credits"
+ flat = true
+ 
+-[node name="WorkshopUploader" type="Button" parent="UILayer/MainMenu/ButtonContainer"]
++[node name="QuitProgramButton" type="Button" parent="UILayer/MainMenu/ButtonContainer"]
+ unique_name_in_owner = true
+-visible = false
+ margin_top = 180.0
+-margin_right = 96.0
++margin_right = 102.0
+ margin_bottom = 200.0
+ rect_min_size = Vector2( 0, 20 )
+ mouse_default_cursor_shape = 2
+ custom_colors/font_color_hover = Color( 1, 0.2, 0.239216, 1 )
+-text = "Workshop Uploader"
++text = "Quit"
+ flat = true
+ 
+ [node name="Title" type="Control" parent="UILayer/MainMenu"]
+@@ -2251,9 +2192,9 @@
+ anchor_right = 0.5
+ anchor_bottom = 0.5
+ margin_left = -26.0
+-margin_top = 26.5
++margin_top = 50.0
+ margin_right = 26.0
+-margin_bottom = 37.5
++margin_bottom = 61.0
+ grow_horizontal = 2
+ custom_colors/font_color = Color( 0.113725, 0.552941, 0.960784, 1 )
+ text = "BY IVY SLY"
+@@ -2295,6 +2236,7 @@
+ 
+ [node name="DiscordButton" type="Button" parent="UILayer/MainMenu/SocialLinks"]
+ unique_name_in_owner = true
++visible = false
+ margin_left = 573.0
+ margin_right = 595.0
+ margin_bottom = 24.0
+@@ -2306,6 +2248,7 @@
+ 
+ [node name="TwitterButton" type="Button" parent="UILayer/MainMenu/SocialLinks"]
+ unique_name_in_owner = true
++visible = false
+ margin_left = 595.0
+ margin_right = 617.0
+ margin_bottom = 24.0
+@@ -2317,6 +2260,7 @@
+ 
+ [node name="TikTokButton" type="Button" parent="UILayer/MainMenu/SocialLinks"]
+ unique_name_in_owner = true
++visible = false
+ margin_left = 617.0
+ margin_right = 639.0
+ margin_bottom = 24.0
+@@ -2340,6 +2284,7 @@
+ 
+ [node name="VersionLabel" type="Label" parent="UILayer/MainMenu/ModListButtonContainer"]
+ unique_name_in_owner = true
++visible = false
+ margin_bottom = 11.0
+ 
+ [node name="RoadmapContainer" type="VBoxContainer" parent="UILayer/MainMenu"]
+@@ -2409,49 +2354,6 @@
+ align = 1
+ autowrap = true
+ 
+-[node name="AnnouncementScrollContainer" type="ScrollContainer" parent="UILayer/MainMenu"]
+-anchor_left = 1.0
+-anchor_right = 1.0
+-margin_left = -114.0
+-margin_top = 2.0
+-margin_right = -2.0
+-margin_bottom = 330.0
+-
+-[node name="AnnouncementContainer" type="VBoxContainer" parent="UILayer/MainMenu/AnnouncementScrollContainer"]
+-unique_name_in_owner = true
+-margin_right = 112.0
+-margin_bottom = 328.0
+-mouse_filter = 2
+-size_flags_horizontal = 3
+-size_flags_vertical = 3
+-script = ExtResource( 202 )
+-
+-[node name="TopLabel" type="Label" parent="UILayer/MainMenu/AnnouncementScrollContainer/AnnouncementContainer"]
+-margin_right = 112.0
+-margin_bottom = 11.0
+-text = "COMMUNITY EVENTS"
+-align = 1
+-
+-[node name="EventTexture" type="TextureRect" parent="UILayer/MainMenu/AnnouncementScrollContainer/AnnouncementContainer"]
+-margin_top = 12.0
+-margin_right = 112.0
+-margin_bottom = 42.0
+-rect_min_size = Vector2( 0, 30 )
+-texture = ExtResource( 79 )
+-expand = true
+-stretch_mode = 1
+-
+-[node name="EventDescription" type="Label" parent="UILayer/MainMenu/AnnouncementScrollContainer/AnnouncementContainer"]
+-margin_top = 42.0
+-margin_right = 112.0
+-margin_bottom = 74.531
+-rect_min_size = Vector2( 0, 32.531 )
+-text = "tournament announcement here!!!
+-"
+-align = 1
+-autowrap = true
+-clip_text = true
+-
+ [node name="PostGameButtons" type="VBoxContainer" parent="UILayer"]
+ unique_name_in_owner = true
+ visible = false
+@@ -2471,14 +2373,6 @@
+ margin_bottom = 64.0
+ text = "replay autosaved"
+ 
+-[node name="RematchButton" type="Button" parent="UILayer/PostGameButtons"]
+-unique_name_in_owner = true
+-margin_top = 65.0
+-margin_right = 86.0
+-margin_bottom = 77.0
+-theme = ExtResource( 4 )
+-text = "Rematch"
+-
+ [node name="QuitButton" type="Button" parent="UILayer/PostGameButtons"]
+ unique_name_in_owner = true
+ margin_top = 78.0
+@@ -2716,13 +2610,6 @@
+ margin_bottom = 251.0
+ text = "enable custom hitsparks"
+ 
+-[node name="ShowCommunityEventsButton" type="CheckButton" parent="UILayer/OptionsContainer/VBoxContainer/Contents/VBoxContainer/TabContainer/Options/ScrollContainer/VBoxContainer"]
+-unique_name_in_owner = true
+-margin_right = 214.0
+-margin_bottom = 12.0
+-pressed = true
+-text = "show community events"
+-
+ [node name="HSeparator2" type="HSeparator" parent="UILayer/OptionsContainer/VBoxContainer/Contents/VBoxContainer/TabContainer/Options/ScrollContainer/VBoxContainer"]
+ margin_top = 252.0
+ margin_right = 214.0
+@@ -3002,27 +2889,6 @@
+ unique_name_in_owner = true
+ volume_db = -20.0
+ 
+-[node name="Lobby" parent="UILayer" instance=ExtResource( 5 )]
+-unique_name_in_owner = true
+-visible = false
+-direct_connect = false
+-
+-[node name="SteamLobbyList" parent="UILayer" instance=ExtResource( 57 )]
+-unique_name_in_owner = true
+-visible = false
+-
+-[node name="SteamLobby" parent="UILayer" instance=ExtResource( 58 )]
+-unique_name_in_owner = true
+-visible = false
+-
+-[node name="DirectConnectLobby" parent="UILayer" instance=ExtResource( 5 )]
+-unique_name_in_owner = true
+-visible = false
+-
+-[node name="WorkshopMenu" parent="UILayer" instance=ExtResource( 68 )]
+-unique_name_in_owner = true
+-visible = false
+-
+ [node name="ReplayControls" parent="UILayer" instance=ExtResource( 54 )]
+ unique_name_in_owner = true
+ visible = false
+@@ -3031,12 +2897,6 @@
+ margin_right = -136.0
+ margin_bottom = -159.0
+ 
+-[node name="NetworkDebugLabel" type="Label" parent="UILayer"]
+-visible = false
+-anchor_right = 1.0
+-anchor_bottom = 1.0
+-script = ExtResource( 7 )
+-
+ [node name="CharacterSelect" parent="UILayer" instance=ExtResource( 12 )]
+ unique_name_in_owner = true
+ visible = false
+@@ -3218,7 +3078,7 @@
+ margin_right = 204.0
+ margin_bottom = 32.0
+ grow_horizontal = 2
+-text = "Tip: to view or edit broken replays from older versions, right-click Your Only Move Is HUSTLE 
++text = "Tip: to view or edit broken replays from older versions, right-click the game 
+ in your Steam library, select \"properties\", then \"betas\", and select the correct patch."
+ align = 1
+ valign = 1
+@@ -3504,7 +3364,7 @@
+ size_flags_vertical = 3
+ text = "This replay is from an old version. Load it anyway?
+ 
+-Tip: to view or edit broken replays from older versions, right-click Your Only Move Is HUSTLE in your Steam library, select \"properties\", then \"betas\", and select the correct patch."
++Tip: to view or edit broken replays from older versions, right-click the game in your Steam library, select \"properties\", then \"betas\", and select the correct patch."
+ autowrap = true
+ 
+ [node name="OldVersionButtonRow" type="HBoxContainer" parent="UILayer/OldVersionConfirmDialog/VBoxContainer/Contents/OldVersionContentVBox"]
+@@ -3542,59 +3402,6 @@
+ unique_name_in_owner = true
+ visible = false
+ 
+-[node name="ResimRequestScreen" type="ColorRect" parent="UILayer"]
+-visible = false
+-anchor_right = 1.0
+-anchor_bottom = 1.0
+-theme = ExtResource( 4 )
+-color = Color( 0, 0, 0, 0.658824 )
+-script = ExtResource( 55 )
+-
+-[node name="RequestUndoPanel" type="PanelContainer" parent="UILayer/ResimRequestScreen"]
+-unique_name_in_owner = true
+-anchor_left = 0.5
+-anchor_top = 0.5
+-anchor_right = 0.5
+-anchor_bottom = 0.5
+-margin_left = -100.0
+-margin_top = -13.0
+-margin_right = 100.0
+-margin_bottom = 14.0
+-grow_horizontal = 2
+-grow_vertical = 2
+-
+-[node name="VBoxContainer" type="VBoxContainer" parent="UILayer/ResimRequestScreen/RequestUndoPanel"]
+-margin_left = 1.0
+-margin_top = 1.0
+-margin_right = 216.0
+-margin_bottom = 48.0
+-custom_constants/separation = 10
+-
+-[node name="Label" type="Label" parent="UILayer/ResimRequestScreen/RequestUndoPanel/VBoxContainer"]
+-margin_right = 215.0
+-margin_bottom = 25.0
+-text = "your opponent suggests the game is stuck. 
+-do you want to try and resync?"
+-align = 1
+-
+-[node name="HBoxContainer" type="HBoxContainer" parent="UILayer/ResimRequestScreen/RequestUndoPanel/VBoxContainer"]
+-margin_top = 35.0
+-margin_right = 215.0
+-margin_bottom = 47.0
+-
+-[node name="ResimYes" type="Button" parent="UILayer/ResimRequestScreen/RequestUndoPanel/VBoxContainer/HBoxContainer"]
+-margin_right = 107.0
+-margin_bottom = 12.0
+-size_flags_horizontal = 3
+-text = "yes"
+-
+-[node name="ResimNo" type="Button" parent="UILayer/ResimRequestScreen/RequestUndoPanel/VBoxContainer/HBoxContainer"]
+-margin_left = 108.0
+-margin_right = 215.0
+-margin_bottom = 12.0
+-size_flags_horizontal = 3
+-text = "no"
+-
+ [node name="ButtonSoundPlayer" parent="UILayer" instance=ExtResource( 18 )]
+ button_containers = [ NodePath("../MainMenu/ButtonContainer"), NodePath("../GameUI/PausePanel/VBoxContainer"), NodePath("") ]
+ 
+@@ -3604,10 +3411,6 @@
+ volume_db = -10.0
+ bus = "UI"
+ 
+-[node name="NetworkSyncTimer" type="Timer" parent="UILayer"]
+-wait_time = 2.0
+-autostart = true
+-
+ [node name="SoftlockResetButton" type="Button" parent="UILayer"]
+ unique_name_in_owner = true
+ visible = false
+@@ -3707,6 +3510,83 @@
+ theme = ExtResource( 4 )
+ align = 1
+ 
++[node name="Pad" type="VBoxContainer" parent="UILayer/OptionsContainer/VBoxContainer/Contents/VBoxContainer/TabContainer"]
++visible = false
++anchor_right = 1.0
++anchor_bottom = 1.0
++margin_top = 11.0
++size_flags_horizontal = 3
++size_flags_vertical = 3
++
++[node name="ScrollContainer" type="ScrollContainer" parent="UILayer/OptionsContainer/VBoxContainer/Contents/VBoxContainer/TabContainer/Pad"]
++margin_right = 220.0
++margin_bottom = 218.0
++size_flags_horizontal = 3
++size_flags_vertical = 3
++
++[node name="VBoxContainer" type="VBoxContainer" parent="UILayer/OptionsContainer/VBoxContainer/Contents/VBoxContainer/TabContainer/Pad/ScrollContainer"]
++margin_right = 220.0
++margin_bottom = 218.0
++size_flags_horizontal = 3
++size_flags_vertical = 3
++custom_constants/separation = 6
++
++[node name="Row0" type="Label" parent="UILayer/OptionsContainer/VBoxContainer/Contents/VBoxContainer/TabContainer/Pad/ScrollContainer/VBoxContainer"]
++margin_right = 214.0
++text = "D-pad / left stick: menus, character select; in the move bar: the tab row"
++autowrap = true
++
++[node name="Row1" type="Label" parent="UILayer/OptionsContainer/VBoxContainer/Contents/VBoxContainer/TabContainer/Pad/ScrollContainer/VBoxContainer"]
++margin_right = 214.0
++text = "Right stick: free cursor, or aim / DI when the game wants a direction"
++autowrap = true
++
++[node name="Row2" type="Label" parent="UILayer/OptionsContainer/VBoxContainer/Contents/VBoxContainer/TabContainer/Pad/ScrollContainer/VBoxContainer"]
++margin_right = 214.0
++text = "A: pick the tab, open a category, pick a move, lock in, click"
++autowrap = true
++
++[node name="Row3" type="Label" parent="UILayer/OptionsContainer/VBoxContainer/Contents/VBoxContainer/TabContainer/Pad/ScrollContainer/VBoxContainer"]
++margin_right = 214.0
++text = "B: back one step - column, moves, categories, then deselect"
++autowrap = true
++
++[node name="Row4" type="Label" parent="UILayer/OptionsContainer/VBoxContainer/Contents/VBoxContainer/TabContainer/Pad/ScrollContainer/VBoxContainer"]
++margin_right = 214.0
++text = "X: feint on or off"
++autowrap = true
++
++[node name="Row5" type="Label" parent="UILayer/OptionsContainer/VBoxContainer/Contents/VBoxContainer/TabContainer/Pad/ScrollContainer/VBoxContainer"]
++margin_right = 214.0
++text = "Y: reverse facing; hold for fine aim"
++autowrap = true
++
++[node name="Row6" type="Label" parent="UILayer/OptionsContainer/VBoxContainer/Contents/VBoxContainer/TabContainer/Pad/ScrollContainer/VBoxContainer"]
++margin_right = 214.0
++text = "LB / RB: previous / next bar tab in a match"
++autowrap = true
++
++[node name="Row7" type="Label" parent="UILayer/OptionsContainer/VBoxContainer/Contents/VBoxContainer/TabContainer/Pad/ScrollContainer/VBoxContainer"]
++margin_right = 214.0
++text = "LT / RT: previous / next menu tab; LT shows the prediction"
++autowrap = true
++
++[node name="Row8" type="Label" parent="UILayer/OptionsContainer/VBoxContainer/Contents/VBoxContainer/TabContainer/Pad/ScrollContainer/VBoxContainer"]
++margin_right = 214.0
++text = "Start or Select: menu. Click the sticks: zoom"
++autowrap = true
++
++[node name="Row9" type="Label" parent="UILayer/OptionsContainer/VBoxContainer/Contents/VBoxContainer/TabContainer/Pad/ScrollContainer/VBoxContainer"]
++margin_right = 214.0
++text = "A picks a tab. Only the tab you picked can be used until you change it"
++autowrap = true
++
++[node name="Foot" type="Label" parent="UILayer/OptionsContainer/VBoxContainer/Contents/VBoxContainer/TabContainer/Pad/ScrollContainer/VBoxContainer"]
++margin_top = 6.0
++margin_right = 214.0
++text = "Plug in any controller; nothing to set up. The mouse and keyboard keep working."
++autowrap = true
++
+ [node name="InputBlocker" type="Control" parent="."]
+ visible = false
+ anchor_right = 1.0
+@@ -3717,8 +3597,5 @@
+ 
+ [connection signal="pressed" from="UILayer/GameUI/BottomBar/OptionsBarContainer/OptionsBar/ClearParticlesButton" to="UILayer" method="_on_ClearParticlesButton_pressed"]
+ [connection signal="text_entered" from="UILayer/GameUI/PausePanel/VBoxContainer/ReplayName" to="." method="_on_ReplayName_text_entered"]
+-[connection signal="pressed" from="UILayer/MainMenu/ButtonContainer/WorkshopUploader" to="UILayer" method="_on_WorkshopUploader_pressed"]
+ [connection signal="toggled" from="UILayer/MainMenu/RoadmapContainer/RoadmapButton" to="UILayer" method="_on_RoadmapButton_toggled"]
+-[connection signal="pressed" from="UILayer/ResimRequestScreen/RequestUndoPanel/VBoxContainer/HBoxContainer/ResimYes" to="UILayer/ResimRequestScreen" method="_on_ResimYes_pressed"]
+-[connection signal="pressed" from="UILayer/ResimRequestScreen/RequestUndoPanel/VBoxContainer/HBoxContainer/ResimNo" to="UILayer/ResimRequestScreen" method="_on_ResimNo_pressed"]
+ [connection signal="pressed" from="UILayer/SoftlockResetButton" to="UILayer" method="_on_SoftlockResetButton_pressed"]

@@ -1,0 +1,11 @@
+--- a/ui/CustomizationScreen/TrailSettings.gd
++++ b/ui/CustomizationScreen/TrailSettings.gd
+@@ -301,7 +301,7 @@
+ 	during_taunt_button = CheckButton.new()
+ 	during_taunt_button.name = "TriggerDuringTaunt"
+ 	during_taunt_button.unique_name_in_owner = true
+-	during_taunt_button.text = "  during hustle"
++	during_taunt_button.text = "  during taunt"
+ 	parent.add_child(during_taunt_button)
+ 	during_taunt_linger = preload("res://ui/CustomizationScreen/SettingsSlider.tscn").instance()
+ 	during_taunt_linger.name = "TriggerDuringTauntLinger"
